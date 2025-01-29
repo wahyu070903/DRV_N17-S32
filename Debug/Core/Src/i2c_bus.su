@@ -1,0 +1,8 @@
+../Core/Src/i2c_bus.c:15:6:i2c_scanbus	24	static
+../Core/Src/i2c_bus.c:28:6:dataReadySet	16	static
+../Core/Src/i2c_bus.c:32:9:dataReadyGet	4	static
+../Core/Src/i2c_bus.c:36:6:sendStatusSet	16	static
+../Core/Src/i2c_bus.c:39:9:sendStatusGet	4	static
+../Core/Src/i2c_bus.c:42:6:i2c_readbus_8t	32	static
+../Core/Src/i2c_bus.c:47:6:HAL_I2C_MemRxCpltCallback	16	static
+../Core/Src/i2c_bus.c:55:6:HAL_I2C_MemTxCpltCallback	16	static

@@ -22,7 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "driver.h"
+#include "encoder.h"
+#include "i2c_bus.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,9 +47,9 @@ I2C_HandleTypeDef hi2c1;
 
 TIM_HandleTypeDef htim2;
 
-osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
-
+osThreadId driverTaskHandler;
+osThreadId encoderTaskHandler;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,12 +60,18 @@ static void MX_TIM2_Init(void);
 void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
-
+void StartDriverTask(void const * argument);
+void StartEncoderTask(void const * argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint8_t i2c_available[MAX_NODE] = {0};
+int32_t encoder_counter = 0;
+uint8_t motor_rotation = 0;		//0 = CCW, 1 = CW
+float motor_speed = 3.0;	//Rps
+int32_t motor_target = 0;
+float pid_data = 0.0;
 /* USER CODE END 0 */
 
 /**
@@ -98,7 +106,10 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
+  i2c_scanbus(&hi2c1, i2c_available);
+  //stepperInit();
+  //setMicrostep(1,1,1);
+  //configureSpeed(0.008);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -119,11 +130,14 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  osThreadDef(driverTask, StartDriverTask, osPriorityNormal, 0, 128);
+  driverTaskHandler = osThreadCreate(osThread(driverTask), NULL);
+
+  osThreadDef(encoderTask, StartEncoderTask, osPriorityNormal, 0, 128);
+  encoderTaskHandler = osThreadCreate(osThread(encoderTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
@@ -197,7 +211,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.ClockSpeed = 400000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -331,7 +345,22 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void StartDriverTask(void const * argument){
+	uint8_t init_flag = 0;
+	float time_start = 0;
+	for(;;){
+		//motor_rotation = getDirection();
+		//maintainPosition(motor_target, &encoder_counter, &pid_data);
+		//motion(motor_target, &encoder_counter, &init_flag, &time_start);
+	}
+}
 
+void StartEncoderTask(void const * argument){
+	for(;;){
+		encChangeDir(motor_rotation);
+		encGetCount(&encoder_counter);
+	}
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */

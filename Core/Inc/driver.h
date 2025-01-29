@@ -25,15 +25,22 @@
 	#define MAX_FREQ 18000		// 18Khz
 	#define PRESCALLER_FREQ 1000000	//1Mhz
 
-	static int microstep_factor = 0;
-	static uint8_t gen_complete = 1;
+	#define KP 2.0f
+	#define KI 0.5f
+	#define KD 0.1f
+	#define OFFSET 100
+	#define MAX_JERK 0.2f
+	#define MAX_ACC	0.8f
+	#define MAX_VEL	5.0f
 
 	void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim);
 	void stepperInit(void);
 	void setMicrostep(uint8_t, uint8_t, uint8_t);
-	void configureSpeed(TIM_HandleTypeDef *, float);
-	void generateStep(TIM_HandleTypeDef*, int);
-	uint8_t gotoAngle(TIM_HandleTypeDef*, float*);
-	void watchPosition();
+	void setDirection(uint8_t);
+	uint8_t getDirection(void);
+	void configureSpeed(float);
+	void generateStep();
+	void maintainPosition(int32_t, int32_t*, float*);
+	void motion(int32_t, int32_t*, uint8_t*, float*);
 
 #endif /* INC_DRIVER_H_ */
