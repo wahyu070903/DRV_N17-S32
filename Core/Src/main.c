@@ -44,9 +44,11 @@
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
+DMA_HandleTypeDef hdma_i2c1_rx;
 
 TIM_HandleTypeDef htim2;
 
+osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
 osThreadId driverTaskHandler;
 osThreadId encoderTaskHandler;
@@ -55,6 +57,7 @@ osThreadId encoderTaskHandler;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 void StartDefaultTask(void const * argument);
@@ -103,13 +106,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   i2c_scanbus(&hi2c1, i2c_available);
-  //stepperInit();
-  //setMicrostep(1,1,1);
-  //configureSpeed(0.008);
+  stepperInit();
+  setMicrostep(0,0,0);
+  configureSpeed(3.0);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -130,6 +134,8 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -279,6 +285,22 @@ static void MX_TIM2_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -346,19 +368,24 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 void StartDriverTask(void const * argument){
-	uint8_t init_flag = 0;
-	float time_start = 0;
 	for(;;){
-		//motor_rotation = getDirection();
-		//maintainPosition(motor_target, &encoder_counter, &pid_data);
+		motor_rotation = getDirection();
+//		maintainPosition(motor_target, &encoder_counter, &pid_data);
 		//motion(motor_target, &encoder_counter, &init_flag, &time_start);
+		uint8_t status = generateSteps(200);
+		if(status){
+			osDelay(3000);
+			encoder_counter = 0;
+			resetPulseCount();
+		}
 	}
 }
 
 void StartEncoderTask(void const * argument){
 	for(;;){
 		encChangeDir(motor_rotation);
-		encGetCount(&encoder_counter);
+		encRead();
+		encoder_counter = getCounter();
 	}
 }
 /* USER CODE END 4 */

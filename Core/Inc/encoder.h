@@ -28,10 +28,10 @@
 	#define ENC_PPR 4096
 	#define ENC_MAX_COUNT 9999999
 	#define ENC_MIN_COUNT -9999999
-	#define ENC_NOISE_THRESHOLD 5
+	#define FILTER_SIZE 1024
 
-	void encGetAngle(float*);
 	void encChangeDir(uint8_t);
-	void encGetCount(int32_t*);
+	void encRead(void);
+	int32_t getCounter();
 
 #endif /* INC_ENCODER_H_ */

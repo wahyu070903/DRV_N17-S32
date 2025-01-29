@@ -12,6 +12,7 @@
 extern TIM_HandleTypeDef htim2;
 volatile uint32_t target_count = 0;
 float microstep_factor = 0;
+static uint8_t pulse_count = 0;
 static uint8_t pulse_complete = 1;
 static uint8_t rotation_direction = 0;		// 0 = CCW, 1 = CW
 float pid_integral = 0.0;
@@ -148,6 +149,24 @@ void motion(int32_t target, int32_t* pos_now, uint8_t* init_flag, float* start_t
 		setMicrostep(1,1,1);
 		configureSpeed(0.4);
 	}
+}
+
+uint8_t generateSteps(uint8_t step){
+	if(pulse_count <= step){
+		if(pulse_complete){
+			generateStep();
+			pulse_count++;
+		}
+	}
+	if(pulse_count > step){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+void resetPulseCount(){
+	pulse_count = 0;
 }
 
 // Interrupt function

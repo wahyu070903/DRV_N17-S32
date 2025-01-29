@@ -40,6 +40,8 @@
 	uint8_t getDirection(void);
 	void configureSpeed(float);
 	void generateStep();
+	uint8_t generateSteps(uint8_t);
+	void resetPulseCount();
 	void maintainPosition(int32_t, int32_t*, float*);
 	void motion(int32_t, int32_t*, uint8_t*, float*);
 
