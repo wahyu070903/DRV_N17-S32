@@ -1,11 +1,2 @@
-../Core/Src/driver.c:21:6:stepperInit	8	static
-../Core/Src/driver.c:28:6:setMicrostep	16	static
-../Core/Src/driver.c:48:6:setDirection	16	static
-../Core/Src/driver.c:60:9:getDirection	4	static
-../Core/Src/driver.c:64:6:generateStep	8	static
-../Core/Src/driver.c:71:6:configureSpeed	32	static
-../Core/Src/driver.c:84:6:maintainPosition	24	static
-../Core/Src/driver.c:100:6:motion	48	static
-../Core/Src/driver.c:154:9:generateSteps	16	static
-../Core/Src/driver.c:168:6:resetPulseCount	4	static
-../Core/Src/driver.c:173:6:HAL_TIM_PWM_PulseFinishedCallback	16	static
+../Core/Src/driver.c:13:13:calcCRC	32	static
+../Core/Src/driver.c:31:19:DRV_ReadRegister	32	static
