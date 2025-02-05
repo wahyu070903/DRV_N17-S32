@@ -1,2 +1,5 @@
 ../Core/Src/driver.c:13:13:calcCRC	32	static
-../Core/Src/driver.c:31:19:DRV_ReadRegister	32	static
+../Core/Src/driver.c:31:13:byteswap	24	static
+../Core/Src/driver.c:41:19:DRV_ReadRegister	32	static
+../Core/Src/driver.c:63:19:DRV_WriteRegister	32	static
+../Core/Src/driver.c:79:6:tmc2209_init	16	static

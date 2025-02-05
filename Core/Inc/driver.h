@@ -12,10 +12,10 @@
 	#include "stm32f1xx_hal.h"
 
 	// GPIO address
-	#define DRV_STEP 		GPIO_PIN_0
-	#define DRV_DIR			GPIO_PIN_1
-	#define DRV_ENA			GPIO_PIN_2
-
+	#define DRV_STEP 			GPIO_PIN_0
+	#define DRV_DIR				GPIO_PIN_1
+	#define DRV_ENA				GPIO_PIN_2
+	#define TMC2209_SLAVE_ADDR	0x00
 	// default values
 
 	// General
@@ -115,28 +115,29 @@
 		TMC2209Reg_LAST_ADDR    = TMC2209Reg_PWM_AUTO
 	};
 
-//	typedef union {
-//	    uint8_t data[8];
-//	    struct {
-//	        uint8_t sync;
-//	        uint8_t slave;
-//	        TMC_addr_t addr;
-//	        TMC_payload_t payload;
-//	        uint8_t crc;
-//	    } msg;
-//	} TMC_uart_write_datagram_t;
-//
-//	typedef union {
-//	    uint8_t data[4];
-//	    struct {
-//	        uint8_t sync;
-//	        uint8_t slave;
-//	        TMC_addr_t addr;
-//	        uint8_t crc;
-//	    } msg;
-//	} TMC_uart_read_datagram_t;
+	typedef union {
+	    uint8_t data[8];
+	    struct {
+	        uint8_t sync;
+	        uint8_t slave;
+	        uint8_t addr;
+	        uint32_t payload;
+	        uint8_t crc;
+	    } msg;
+	} TMC_uart_write_datagram_t;
+
+	typedef union {
+	    uint8_t data[4];
+	    struct {
+	        uint8_t sync;
+	        uint8_t slave;
+	        uint8_t addr;
+	        uint8_t crc;
+	    } msg;
+	} TMC_uart_read_datagram_t;
 
 	HAL_StatusTypeDef DRV_ReadRegister(uint8_t, uint32_t*);
-	bool DRV_WriteRegister();
+	HAL_StatusTypeDef DRV_WriteRegister(uint8_t, uint32_t);
+	void tmc2209_init(void);
 
 #endif /* INC_DRIVER_H_ */
