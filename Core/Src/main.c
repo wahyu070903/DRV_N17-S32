@@ -398,7 +398,8 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void StartDriverTask(void const * argument){
 	for(;;){
-		DRV_ReadRegister(0x00, &driver_value);
+		//DRV_ReadRegister(0x00, &driver_value);
+		DRV_readgconf(&driver_value);
 	}
 }
 
