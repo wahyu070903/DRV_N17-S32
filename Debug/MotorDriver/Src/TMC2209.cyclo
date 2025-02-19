@@ -1,0 +1,7 @@
+../MotorDriver/Src/TMC2209.c:16:6:TMC2209_setup	1
+../MotorDriver/Src/TMC2209.c:26:6:TMC2209_enable	2
+../MotorDriver/Src/TMC2209.c:35:6:TMC2209_disable	2
+../MotorDriver/Src/TMC2209.c:44:6:TMC2209_setMicrostep	1
+../MotorDriver/Src/TMC2209.c:49:6:TMC2209_readChopConfig	1
+../MotorDriver/Src/TMC2209.c:55:6:TMC2209_moveVelocity	3
+../MotorDriver/Src/TMC2209.c:69:6:HAL_TIM_PWM_PulseFinishedCallback	2

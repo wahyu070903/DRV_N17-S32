@@ -22,10 +22,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "driver.h"
 #include "encoder.h"
 #include "i2c_bus.h"
 #include "uart_bus.h"
+#include "../../MotorDriver/Inc/TMC2209.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -79,7 +79,7 @@ uint8_t motor_rotation = 0;		//0 = CCW, 1 = CW
 float motor_speed = 3.0;	//Rps
 int32_t motor_target = 0;
 float pid_data = 0.0;
-uint32_t driver_value = 0;
+uint16_t driver_value = 0;
 /* USER CODE END 0 */
 
 /**
@@ -117,7 +117,6 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   //i2c_scanbus(&hi2c1, i2c_available);
-  tmc2209_init();
   //initOneWireTransmission();
   /* USER CODE END 2 */
 
@@ -259,12 +258,12 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
+  htim2.Init.Prescaler = 72 - 1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 65535;
+  htim2.Init.Period = 4 - 1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_OC_Init(&htim2) != HAL_OK)
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -274,11 +273,11 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_FORCED_ACTIVE;
-  sConfigOC.Pulse = 0;
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 50;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -399,7 +398,14 @@ static void MX_GPIO_Init(void)
 void StartDriverTask(void const * argument){
 	for(;;){
 		//DRV_ReadRegister(0x00, &driver_value);
-		DRV_readgconf(&driver_value);
+		TMC2209_disable();
+		TMC2209_moveVelocity(72);
+
+		TMC2209_Microstep microstep = TMC2209_Microsteps_1;
+		TMC2209_setMicrostep(microstep);
+		osDelay(100);
+		uint32_t cop_conf = 0;
+		TMC2209_readChopConfig(&cop_conf);
 	}
 }
 

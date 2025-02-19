@@ -29,4 +29,5 @@ Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS \
 Middlewares/Third_Party/FreeRTOS/Source \
 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3 \
 Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang \
+MotorDriver/Src \
 
