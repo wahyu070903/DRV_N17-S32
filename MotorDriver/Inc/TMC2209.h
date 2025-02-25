@@ -55,6 +55,24 @@ typedef struct {
 } TMC2209_Setup;
 
 typedef union {
+    uint32_t bytes;
+    struct {
+        uint32_t
+        I_scale_analog   :1,
+        internal_Rsense  :1,
+        en_spreadcycle   :1,
+        shaft            :1,
+        index_otpw       :1,
+        index_step       :1,
+        pdn_disable      :1,
+        mstep_reg_select :1,
+        multistep_filt   :1,
+        test_mode        :1,
+        reserved         :22;
+    };
+} TMC2209_gconf_reg_t;
+
+typedef union {
 	uint32_t bytes;
 	struct {
 		uint32_t
@@ -73,6 +91,7 @@ typedef union {
 	};
 } TMC2209_chopConfig;
 
+
 typedef enum {
 	TMC2209_Microsteps_1 	= 0b1000,
 	TMC2209_Microsteps_2 	= 0b0111,
@@ -85,7 +104,7 @@ typedef enum {
 	TMC2209_Microsteps_256 	= 0b0000,
 } TMC2209_Microstep;
 
-void TMC2209_setup(TMC2209_Setup*);
+void TMC2209_setup();
 void TMC2209_enable();
 void TMC2209_disable();
 void TMC2209_setMicrostep(TMC2209_Microstep);

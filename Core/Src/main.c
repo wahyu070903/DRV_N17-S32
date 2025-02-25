@@ -79,7 +79,7 @@ uint8_t motor_rotation = 0;		//0 = CCW, 1 = CW
 float motor_speed = 3.0;	//Rps
 int32_t motor_target = 0;
 float pid_data = 0.0;
-uint16_t driver_value = 0;
+uint32_t driver_value = 0;
 /* USER CODE END 0 */
 
 /**
@@ -116,8 +116,7 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  //i2c_scanbus(&hi2c1, i2c_available);
-  //initOneWireTransmission();
+  TMC2209_setup();
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -304,7 +303,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 9600;
+  huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -397,15 +396,11 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void StartDriverTask(void const * argument){
 	for(;;){
-		//DRV_ReadRegister(0x00, &driver_value);
-		TMC2209_disable();
-		TMC2209_moveVelocity(72);
-
-		TMC2209_Microstep microstep = TMC2209_Microsteps_1;
-		TMC2209_setMicrostep(microstep);
+		TMC2209_readChopConfig(&driver_value);
+//		TMC2209_enable();
+//		TMC2209_moveVelocity(10);
+//		TMC2209_setup();
 		osDelay(100);
-		uint32_t cop_conf = 0;
-		TMC2209_readChopConfig(&cop_conf);
 	}
 }
 

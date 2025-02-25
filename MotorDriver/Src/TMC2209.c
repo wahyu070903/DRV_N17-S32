@@ -9,47 +9,54 @@
 TMC2209_Setup globalSetup;
 extern TIM_HandleTypeDef htim2;
 TMC2209_chopConfig chopConfig;
+TMC2209_gconf_reg_t gconfConfig;
+
 static uint8_t toff_ = TOFF_DEFAULT;
 static uint8_t PWM_Pulse_Complete = TRUE;
 static uint8_t Driver_Enable = FALSE;
 
-void TMC2209_setup(TMC2209_Setup* setup)
+void TMC2209_setup()
 {
 
-	globalSetup.enablePin = setup->enablePin;
-	globalSetup.stepPin = setup->stepPin;
-	globalSetup.txPin = setup->txPin;
+//	globalSetup.enablePin = setup->enablePin;
+//	globalSetup.stepPin = setup->stepPin;
+//	globalSetup.txPin = setup->txPin;
 
+	gconfConfig.bytes = FALSE;
+	gconfConfig.I_scale_analog = TRUE;
+	gconfConfig.pdn_disable = TRUE;
+	gconfConfig.multistep_filt = TRUE;
+	gconfConfig.mstep_reg_select = TRUE;
+
+	TMC2209_HAL_Write(TMC2209Reg_GCONF, gconfConfig.bytes);
 	TMC2209_disable();
+	HAL_Delay(100);
 }
 
 void TMC2209_enable()
 {
-	if(!Driver_Enable){
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
-		Driver_Enable = TRUE;
-		chopConfig.toff = toff_;
-	}
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
+	Driver_Enable = TRUE;
+	chopConfig.toff = toff_;
 }
 
 void TMC2209_disable()
 {
-	if(Driver_Enable){
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
-		Driver_Enable = FALSE;
-		chopConfig.toff = TOFF_DISABLE;
-	}
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
+	Driver_Enable = FALSE;
+	chopConfig.toff = TOFF_DISABLE;
 }
 
 void TMC2209_setMicrostep(TMC2209_Microstep Microstep)
 {
+	chopConfig.bytes = 0x10000053;
 	chopConfig.mres = Microstep;
 	TMC2209_HAL_Write(TMC2209Reg_CHOPCONF, chopConfig.bytes);
 }
 void TMC2209_readChopConfig(uint32_t* result)
 {
-	uint32_t buffer;
-	TMC2209_HAL_Read(TMC2209Reg_CHOPCONF, &buffer);
+	uint32_t buffer = 0;
+	TMC2209_HAL_Read(TMC2209Reg_GCONF, &buffer);
 	*result = buffer;
 }
 void TMC2209_moveVelocity(uint8_t velocity)
@@ -59,7 +66,7 @@ void TMC2209_moveVelocity(uint8_t velocity)
 		PWM_Pulse_Complete = TRUE;
 		return;
 	}
-	if(PWM_Pulse_Complete){
+	if(PWM_Pulse_Complete == TRUE){
 		HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
 		__HAL_TIM_SET_AUTORELOAD(&htim2, velocity);
 		PWM_Pulse_Complete = FALSE;

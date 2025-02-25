@@ -1,4 +1,4 @@
 ../MotorDriver/Src/TMC2209_HAL.c:12:13:calculateCRC	32	static
 ../MotorDriver/Src/TMC2209_HAL.c:29:13:byteswap	24	static
-../MotorDriver/Src/TMC2209_HAL.c:38:19:TMC2209_HAL_Write	32	static
-../MotorDriver/Src/TMC2209_HAL.c:52:19:TMC2209_HAL_Read	48	static
+../MotorDriver/Src/TMC2209_HAL.c:41:19:TMC2209_HAL_Write	32	static
+../MotorDriver/Src/TMC2209_HAL.c:58:19:TMC2209_HAL_Read	48	static
