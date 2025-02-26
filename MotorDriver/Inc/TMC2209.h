@@ -73,6 +73,16 @@ typedef union {
 } TMC2209_gconf_reg_t;
 
 typedef union {
+    uint32_t bytes;
+    struct {
+        uint32_t
+        reserved0 :8,
+        conf      :4,
+        reserved1 :20;
+    };
+} TMC2209_slaveconf_reg_t;
+
+typedef union {
 	uint32_t bytes;
 	struct {
 		uint32_t

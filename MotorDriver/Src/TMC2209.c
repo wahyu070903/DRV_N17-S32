@@ -10,6 +10,7 @@ TMC2209_Setup globalSetup;
 extern TIM_HandleTypeDef htim2;
 TMC2209_chopConfig chopConfig;
 TMC2209_gconf_reg_t gconfConfig;
+TMC2209_slaveconf_reg_t slaveConfig;
 
 static uint8_t toff_ = TOFF_DEFAULT;
 static uint8_t PWM_Pulse_Complete = TRUE;
@@ -28,7 +29,10 @@ void TMC2209_setup()
 	gconfConfig.multistep_filt = TRUE;
 	gconfConfig.mstep_reg_select = TRUE;
 
+	slaveConfig.conf = 0x00;
+
 	TMC2209_HAL_Write(TMC2209Reg_GCONF, gconfConfig.bytes);
+	TMC2209_HAL_Write(TMC2209Reg_SLAVECONF, slaveConfig.bytes);
 	TMC2209_disable();
 	HAL_Delay(100);
 }
