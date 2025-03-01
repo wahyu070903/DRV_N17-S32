@@ -16,13 +16,17 @@ static uint8_t toff_ = TOFF_DEFAULT;
 static uint8_t PWM_Pulse_Complete = TRUE;
 static uint8_t Driver_Enable = FALSE;
 
+void TMC2209_setdefault()
+{
+	gconfConfig.I_scale_analog = TRUE;
+	gconfConfig.multistep_filt = TRUE;
+	TMC2209_HAL_Write(TMC2209Reg_GCONF, gconfConfig.bytes);
+	chopConfig.bytes = CHOPPER_CONFIG_DEFAULT;
+	TMC2209_HAL_Write(TMC2209Reg_CHOPCONF, chopConfig.bytes);
+}
+
 void TMC2209_setup()
 {
-
-//	globalSetup.enablePin = setup->enablePin;
-//	globalSetup.stepPin = setup->stepPin;
-//	globalSetup.txPin = setup->txPin;
-
 	gconfConfig.bytes = FALSE;
 	gconfConfig.I_scale_analog = TRUE;
 	gconfConfig.pdn_disable = TRUE;
@@ -33,6 +37,7 @@ void TMC2209_setup()
 
 	TMC2209_HAL_Write(TMC2209Reg_GCONF, gconfConfig.bytes);
 	TMC2209_HAL_Write(TMC2209Reg_SLAVECONF, slaveConfig.bytes);
+//	TMC2209_setMicrostep(TMC2209_Microsteps_1);
 	TMC2209_disable();
 	HAL_Delay(100);
 }
@@ -53,16 +58,16 @@ void TMC2209_disable()
 
 void TMC2209_setMicrostep(TMC2209_Microstep Microstep)
 {
-	chopConfig.bytes = 0x10000053;
 	chopConfig.mres = Microstep;
 	TMC2209_HAL_Write(TMC2209Reg_CHOPCONF, chopConfig.bytes);
 }
 void TMC2209_readChopConfig(uint32_t* result)
 {
 	uint32_t buffer = 0;
-	TMC2209_HAL_Read(TMC2209Reg_GCONF, &buffer);
+	TMC2209_HAL_Read(TMC2209Reg_CHOPCONF, &buffer);
 	*result = buffer;
 }
+
 void TMC2209_moveVelocity(uint8_t velocity)
 {
 	if(velocity == 0) {

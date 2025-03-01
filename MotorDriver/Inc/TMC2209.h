@@ -14,9 +14,11 @@
 
 #define TRUE 1
 #define FALSE 0
+#define TMC2209_FREQ 1000000	// 1KHZ
 #define TOFF_DEFAULT 3
 #define TOFF_DISABLE 0
-#define TMC2209_FREQ 1000000	// 1KHZ
+
+const static uint32_t CHOPPER_CONFIG_DEFAULT = 0x10000053;
 
 enum tmc2209_regaddr_t {
     TMC2209Reg_GCONF        = 0x00,
@@ -100,7 +102,6 @@ typedef union {
 		diss2vs 		: 1;
 	};
 } TMC2209_chopConfig;
-
 
 typedef enum {
 	TMC2209_Microsteps_1 	= 0b1000,

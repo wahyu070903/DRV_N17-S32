@@ -72,21 +72,19 @@ HAL_StatusTypeDef TMC2209_HAL_Read(uint8_t reg, uint32_t* result)
 	HAL_StatusTypeDef wstatus = HAL_UART_Transmit(&huart1, datagram.bytes, sizeof(TMC2209_Read_Datagram_t), HAL_MAX_DELAY);
 	if(wstatus == HAL_OK){
 		uint8_t buffer[8] = {0};
-		HAL_StatusTypeDef rstatus;
-		for(int i = 0; i < 8 ; i++){
+		for(int i = 0; i < sizeof(buffer) ; i++){
 			HAL_HalfDuplex_EnableReceiver(&huart1);
-			rstatus = HAL_UART_Receive(&huart1, &buffer[i], sizeof(buffer), 100);
+			HAL_UART_Receive(&huart1, &buffer[i], sizeof(buffer), 100);
 		}
-		if(rstatus == HAL_OK){
-			memcpy(res.bytes, buffer, sizeof(buffer));
-			uint8_t crc = res.message.crc;
-			calculateCRC(res.bytes, sizeof(	TMC2209_Write_Datagram_t));
-			if(res.message.slave == 0xFF && crc == res.message.crc){
-				uint8_t temp_var[4];
-				memcpy(temp_var,res.message.payload.data, sizeof(temp_var));
-				byteswap(temp_var);
-				*result = *(uint32_t*)temp_var;
-			}
+
+		memcpy(res.bytes, buffer, sizeof(buffer));
+		uint8_t crc = res.message.crc;
+		calculateCRC(res.bytes, sizeof(	TMC2209_Write_Datagram_t));
+		if(res.message.slave == 0xFF && crc == res.message.crc){
+			uint8_t temp_var[4];
+			memcpy(temp_var,res.message.payload.data, sizeof(temp_var));
+			byteswap(temp_var);
+			*result = *(uint32_t*)temp_var;
 		}
 	}
 	return wstatus;

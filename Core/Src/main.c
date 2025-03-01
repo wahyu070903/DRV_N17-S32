@@ -22,10 +22,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "encoder.h"
 #include "i2c_bus.h"
 #include "uart_bus.h"
 #include "../../MotorDriver/Inc/TMC2209.h"
+#include "../../Encoder/Inc/Encoder.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -73,13 +73,14 @@ void StartEncoderTask(void const * argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t i2c_available[MAX_NODE] = {0};
+uint8_t i2c_available[I2C_CONNECTED_NODE] = {0};
 int32_t encoder_counter = 0;
 uint8_t motor_rotation = 0;		//0 = CCW, 1 = CW
 float motor_speed = 3.0;	//Rps
 int32_t motor_target = 0;
 float pid_data = 0.0;
 uint32_t driver_value = 0;
+uint16_t enc_raw = 0;
 /* USER CODE END 0 */
 
 /**
@@ -116,8 +117,9 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-//  TMC2209_setup();
+  i2c_scanbus(&hi2c1, i2c_available);
   TMC2209_setup();
+  encoder_init();
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -398,18 +400,16 @@ static void MX_GPIO_Init(void)
 void StartDriverTask(void const * argument){
 	for(;;){
 		TMC2209_readChopConfig(&driver_value);
-//		TMC2209_enable();
-//		TMC2209_moveVelocity(10);
-//		TMC2209_setup();
+		TMC2209_enable();
+//		TMC2209_moveVelocity(100);
+
 		osDelay(100);
 	}
 }
 
 void StartEncoderTask(void const * argument){
 	for(;;){
-//		encChangeDir(motor_rotation);
-//		encRead();
-//		encoder_counter = getCounter();
+		encoder_getAngle(&enc_raw);
 	}
 }
 /* USER CODE END 4 */
