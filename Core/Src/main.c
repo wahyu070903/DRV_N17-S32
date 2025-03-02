@@ -25,7 +25,7 @@
 #include "i2c_bus.h"
 #include "uart_bus.h"
 #include "../../MotorDriver/Inc/TMC2209.h"
-#include "../../Encoder/Inc/Encoder.h"
+#include "encoder.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -74,8 +74,8 @@ void StartEncoderTask(void const * argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint8_t i2c_available[I2C_CONNECTED_NODE] = {0};
-int32_t encoder_counter = 0;
-uint8_t motor_rotation = 0;		//0 = CCW, 1 = CW
+volatile int32_t encoder_counter = 0;
+volatile uint8_t motor_rotation = 0;		//0 = CCW, 1 = CW
 float motor_speed = 3.0;	//Rps
 int32_t motor_target = 0;
 float pid_data = 0.0;
@@ -119,7 +119,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   i2c_scanbus(&hi2c1, i2c_available);
   TMC2209_setup();
-  encoder_init();
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -409,7 +408,9 @@ void StartDriverTask(void const * argument){
 
 void StartEncoderTask(void const * argument){
 	for(;;){
-		encoder_getAngle(&enc_raw);
+		encChangeDir(motor_rotation);
+		encRead();
+		encoder_counter = getCounter();
 	}
 }
 /* USER CODE END 4 */
