@@ -119,6 +119,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   i2c_scanbus(&hi2c1, i2c_available);
   TMC2209_setup();
+  TMC2209_setMicrostep(TMC2209_Microsteps_1);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -398,11 +399,12 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void StartDriverTask(void const * argument){
 	for(;;){
-		TMC2209_readChopConfig(&driver_value);
+//		TMC2209_readChopConfig(&driver_value);
 		TMC2209_enable();
-//		TMC2209_moveVelocity(100);
-
-		osDelay(100);
+		TMC2209_velocity(1.0);
+		TMC2209_move();
+//
+//		osDelay(100);
 	}
 }
 

@@ -14,7 +14,10 @@
 
 #define TRUE 1
 #define FALSE 0
-#define TMC2209_FREQ 1000000	// 1KHZ
+#define TMC2209_BASE_FREQ 72000000	// 72MHZ
+#define TMC2209_DEFAULT_PRESCALLER 72
+#define MAX_CNT_PERIOD 65535
+#define STEP_PER_REV 200
 #define TOFF_DEFAULT 3
 #define TOFF_DISABLE 0
 
@@ -120,6 +123,7 @@ void TMC2209_enable();
 void TMC2209_disable();
 void TMC2209_setMicrostep(TMC2209_Microstep);
 void TMC2209_readChopConfig(uint32_t*);
-void TMC2209_moveVelocity(uint8_t);
+void TMC2209_velocity(float);
+void TMC2209_move();
 
 #endif /* INC_TMC2209_H_ */

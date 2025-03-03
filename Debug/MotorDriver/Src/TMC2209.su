@@ -1,8 +1,9 @@
-../MotorDriver/Src/TMC2209.c:19:6:TMC2209_setdefault	8	static
-../MotorDriver/Src/TMC2209.c:28:6:TMC2209_setup	8	static
-../MotorDriver/Src/TMC2209.c:45:6:TMC2209_enable	8	static
-../MotorDriver/Src/TMC2209.c:52:6:TMC2209_disable	8	static
-../MotorDriver/Src/TMC2209.c:59:6:TMC2209_setMicrostep	16	static
-../MotorDriver/Src/TMC2209.c:64:6:TMC2209_readChopConfig	24	static
-../MotorDriver/Src/TMC2209.c:71:6:TMC2209_moveVelocity	16	static
-../MotorDriver/Src/TMC2209.c:85:6:HAL_TIM_PWM_PulseFinishedCallback	16	static
+../MotorDriver/Src/TMC2209.c:23:6:TMC2209_setdefault	4	static
+../MotorDriver/Src/TMC2209.c:30:6:TMC2209_setup	8	static
+../MotorDriver/Src/TMC2209.c:48:6:TMC2209_enable	8	static
+../MotorDriver/Src/TMC2209.c:58:6:TMC2209_disable	8	static
+../MotorDriver/Src/TMC2209.c:68:6:TMC2209_setMicrostep	16	static
+../MotorDriver/Src/TMC2209.c:74:6:TMC2209_readChopConfig	24	static
+../MotorDriver/Src/TMC2209.c:81:6:TMC2209_velocity	32	static
+../MotorDriver/Src/TMC2209.c:109:6:TMC2209_move	8	static
+../MotorDriver/Src/TMC2209.c:115:6:HAL_TIM_PWM_PulseFinishedCallback	16	static
