@@ -19,6 +19,8 @@ static uint8_t PWM_Pulse_Complete = TRUE;
 static uint8_t Driver_Enable = FALSE;
 static uint8_t active_microstep;
 static float vel_now = 0.0;
+static uint8_t rotation_dir;
+static uint32_t stepCounter = 0;
 
 void TMC2209_setdefault()
 {
@@ -69,7 +71,7 @@ void TMC2209_setMicrostep(TMC2209_Microstep Microstep)
 {
 	chopConfig.mres = Microstep;
 	TMC2209_HAL_Write(TMC2209Reg_CHOPCONF, chopConfig.bytes);
-	active_microstep = 2 ^ abs(Microstep - TMC2209_Microsteps_1);
+	active_microstep = pow(2, abs(Microstep - TMC2209_Microsteps_1));
 }
 void TMC2209_readChopConfig(uint32_t* result)
 {
@@ -94,7 +96,7 @@ void TMC2209_velocity(float velocity)
 	while(TRUE){
 		frequency  = (velocity * (STEP_PER_REV * active_microstep)) / 60;
 		if(((TMC2209_BASE_FREQ / prescaller) / frequency) > MAX_CNT_PERIOD){
-			prescaller = prescaller * 2;
+			prescaller += TMC2209_DEFAULT_PRESCALLER;
 			continue;
 		}
 		desired_period = (uint16_t)round((TMC2209_BASE_FREQ / prescaller) / frequency);
@@ -112,11 +114,60 @@ void TMC2209_move(){
 		PWM_Pulse_Complete = FALSE;
 	}
 }
+
+void TMC2209_stop(){
+	if(PWM_Pulse_Complete == FALSE){
+		HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
+		PWM_Pulse_Complete = TRUE;
+	}
+}
+
+void TMC2209_direction(uint8_t direction){
+	if(direction == rotation_dir) return;
+
+	if(direction == TMC2209_ROT_FWD){
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+		rotation_dir = TMC2209_ROT_FWD;
+	}
+	if(direction == TMC2209_ROT_REV){
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+		rotation_dir = TMC2209_ROT_REV;
+	}
+}
+
+void TMC2209_watchPosition(int32_t* target, int32_t* counter){
+	if(*counter > *target){
+		TMC2209_direction(TMC2209_ROT_FWD);
+	}
+	if(*counter < *target){
+		TMC2209_direction(TMC2209_ROT_REV);
+	}
+
+	if(*counter == *target){
+		TMC2209_stop();
+	}
+}
+
+TMC2209_getDirection(uint8_t* result){
+	*result = rotation_dir;
+}
+
+TMC2209_rotateOnce(){
+	uint32_t target = STEP_PER_REV * active_microstep;
+	HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
+	while(TRUE){
+		if(stepCounter >= target){
+			HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
+			stepCounter = 0;
+			break;
+		}
+	}
+}
+
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM2) {
-		HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_1);
-		PWM_Pulse_Complete = TRUE;
+		stepCounter ++;
 	}
 }
 

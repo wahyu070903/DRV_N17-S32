@@ -41,12 +41,12 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+#define TRUE 1
+#define FALSE 0
 /* USER CODE END EM */
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);

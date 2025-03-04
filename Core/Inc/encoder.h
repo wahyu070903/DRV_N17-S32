@@ -24,14 +24,20 @@
 	#define AS5600_MAGNET_LOW 0x10
 	#define AS5600_MAGNET_DETECT 0x20
 
+#define TRUE 1
+#define FALSE 0
 	#define PI 3.14159f
 	#define ENC_PPR 4096
 	#define ENC_MAX_COUNT 9999999
 	#define ENC_MIN_COUNT -9999999
-	#define FILTER_SIZE 1024
+	#define FILTER_SIZE 8
+	#define JUMP_OFFEST 20
 
 	void encChangeDir(uint8_t);
 	void encRead(void);
 	int32_t getCounter();
+
+//	test only
+	void encGetBuffer(uint8_t*);
 
 #endif /* INC_ENCODER_H_ */

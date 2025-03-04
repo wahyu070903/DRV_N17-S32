@@ -53,6 +53,11 @@ enum tmc2209_regaddr_t {
     TMC2209Reg_LAST_ADDR    = TMC2209Reg_PWM_AUTO
 };
 
+enum tmc2209_rot_direction_t {
+	TMC2209_ROT_FWD = 0x00,
+	TMC2209_ROT_REV = 0x01
+};
+
 typedef struct {
 	uint8_t enablePin;
 	uint8_t stepPin;
@@ -125,5 +130,9 @@ void TMC2209_setMicrostep(TMC2209_Microstep);
 void TMC2209_readChopConfig(uint32_t*);
 void TMC2209_velocity(float);
 void TMC2209_move();
-
+void TMC2209_stop();
+void TMC2209_watchPosition(int32_t*, int32_t*);
+void TMC2209_direction(uint8_t);
+void TMC2209_getDirection(uint8_t*);
+void TMC2209_rotateOnce();
 #endif /* INC_TMC2209_H_ */

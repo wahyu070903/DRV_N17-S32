@@ -1,6 +1,7 @@
-../Core/Src/encoder.c:21:6:encChangeDir	16	static
-../Core/Src/encoder.c:33:6:encGetAngle	48	static
-../Core/Src/encoder.c:43:6:encRead	16	static
-../Core/Src/encoder.c:47:9:getCounter	4	static
-../Core/Src/encoder.c:51:10:lowPassFilter	24	static
-../Core/Src/encoder.c:65:6:HAL_I2C_MemRxCpltCallback	24	static
+../Core/Src/encoder.c:25:6:encChangeDir	16	static
+../Core/Src/encoder.c:37:6:encGetAngle	48	static
+../Core/Src/encoder.c:47:6:encRead	16	static
+../Core/Src/encoder.c:51:9:getCounter	4	static
+../Core/Src/encoder.c:55:6:encGetBuffer	16	static
+../Core/Src/encoder.c:60:10:lowPassFilter	24	static
+../Core/Src/encoder.c:74:6:HAL_I2C_MemRxCpltCallback	24	static
