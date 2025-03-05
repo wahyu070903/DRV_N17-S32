@@ -20,6 +20,18 @@
 #define STEP_PER_REV 200
 #define TOFF_DEFAULT 3
 #define TOFF_DISABLE 0
+#define MAX_SPEED 240	//240-260
+#define MIN_SPEED 0
+#define PID_KP 10.2708452120852
+#define PID_KI 23.4490125384368
+#define PID_KD 8.65704903214755
+#define PID_MAX 100000.0f
+#define PID_INTEGRAL_MAX 1000000.0f
+#define PID_INTEGRAL_MIN 0.0f
+#define PID_MIN 0.0f
+#define PID_SAMPLING 10	//10ms
+#define PID_DEADBAND 2.0f
+#define PID_INTEGRAL_TRESHOLD 50.0f
 
 const static uint32_t CHOPPER_CONFIG_DEFAULT = 0x10000053;
 
@@ -131,7 +143,7 @@ void TMC2209_readChopConfig(uint32_t*);
 void TMC2209_velocity(float);
 void TMC2209_move();
 void TMC2209_stop();
-void TMC2209_watchPosition(int32_t*, int32_t*);
+void TMC2209_watchPosition(int32_t*, int32_t*, float*);
 void TMC2209_direction(uint8_t);
 void TMC2209_getDirection(uint8_t*);
 void TMC2209_rotateOnce();

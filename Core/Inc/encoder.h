@@ -30,7 +30,7 @@
 	#define ENC_PPR 4096
 	#define ENC_MAX_COUNT 9999999
 	#define ENC_MIN_COUNT -9999999
-	#define FILTER_SIZE 8
+	#define FILTER_SIZE 4
 	#define JUMP_OFFEST 20
 
 	void encChangeDir(uint8_t);

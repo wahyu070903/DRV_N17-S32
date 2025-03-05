@@ -21,6 +21,13 @@ static uint8_t active_microstep;
 static float vel_now = 0.0;
 static uint8_t rotation_dir;
 static uint32_t stepCounter = 0;
+static float pid_error = 0;
+static float pid_last_error = 0;
+static float pid_integral = 0;
+static float pid_direvative = 0;
+static float pid_output = 0;
+static float pid_fraction = 0;
+static uint32_t pid_last_time = 0;
 
 void TMC2209_setdefault()
 {
@@ -135,24 +142,60 @@ void TMC2209_direction(uint8_t direction){
 	}
 }
 
-void TMC2209_watchPosition(int32_t* target, int32_t* counter){
-	if(*counter > *target){
-		TMC2209_direction(TMC2209_ROT_FWD);
-	}
-	if(*counter < *target){
-		TMC2209_direction(TMC2209_ROT_REV);
-	}
+void PID_controller(int32_t* setpoint, int32_t *current, float* result){
+	uint32_t time_now = HAL_GetTick();
+	if(time_now - pid_last_time >= PID_SAMPLING){
+		pid_error = (float)(*setpoint - *current);
 
-	if(*counter == *target){
-		TMC2209_stop();
+		if(fabs(pid_error) < PID_DEADBAND){
+			*result = 0;
+			return;
+		}
+
+		if(fabs(pid_error) > PID_INTEGRAL_TRESHOLD){
+			pid_integral += pid_error;
+			if(pid_integral > PID_INTEGRAL_MAX) pid_integral = PID_INTEGRAL_MAX;
+			if(pid_integral < PID_INTEGRAL_MIN) pid_integral = PID_INTEGRAL_MIN;
+		}else{
+			pid_integral = 0;
+		}
+
+		float direvative = (pid_error - pid_last_error) / (time_now - pid_last_time);
+		pid_direvative = (pid_direvative * 0.9f) + (direvative * 0.1f);
+
+		pid_output = (PID_KP * pid_error) + (PID_KI * pid_integral) + (PID_KD * pid_direvative);
+
+		pid_last_error = pid_error;
+		pid_last_time = time_now;
+
+		*result = fmaxf(0.0f, fminf(1.0f, fabs(pid_output / PID_MAX)));
 	}
 }
+void TMC2209_watchPosition(int32_t* target, int32_t* counter, float* speed){
 
-TMC2209_getDirection(uint8_t* result){
+	PID_controller(target, counter, &pid_fraction);
+
+	if(*counter > *target) TMC2209_direction(TMC2209_ROT_FWD);
+	if(*counter < *target) TMC2209_direction(TMC2209_ROT_REV);
+
+	if(abs(*target - *counter) > 100){
+		if(active_microstep != TMC2209_Microsteps_1){
+			TMC2209_setMicrostep(TMC2209_Microsteps_1);
+		}
+	}else{
+		if(active_microstep != TMC2209_Microsteps_64){
+			TMC2209_setMicrostep(TMC2209_Microsteps_64);
+		}
+	}
+	*speed = pid_fraction * MAX_SPEED;
+
+}
+
+void TMC2209_getDirection(uint8_t* result){
 	*result = rotation_dir;
 }
 
-TMC2209_rotateOnce(){
+void TMC2209_rotateOnce(){
 	uint32_t target = STEP_PER_REV * active_microstep;
 	HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
 	while(TRUE){

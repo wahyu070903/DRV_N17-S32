@@ -57,7 +57,7 @@ void encGetBuffer(uint8_t* result){
 	result[1] = raw_buffer[1];
 }
 
-uint16_t lowPassFilter(uint16_t newData){
+uint16_t lowPassFilter(uint16_t newData, uint8_t* finish_f){
 	encoderReadings[filterIndex] = newData;
 	filterIndex = (filterIndex + 1) % FILTER_SIZE;
 
@@ -75,7 +75,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
     if (hi2c->Instance == I2C1) {
     	uint16_t position_now = (raw_buffer[0] << 8) | raw_buffer[1];
 //      filter make it worse disable it
-//      position_now = lowPassFilter(position_now);
+//    	position_now = lowPassFilter(position_now);
 		active_quadrant = -1;
 
 		if(position_now >= 0 && position_now <= 1024) active_quadrant = 1;
@@ -88,10 +88,10 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 
 		if(last_quadrant == 4 && active_quadrant == 1){
 			elapsed_fall_f = TRUE;
-			delta = (ENC_PPR - 1) - delta;
+			delta = ((ENC_PPR - 1) - abs(delta));
 		}else if(last_quadrant == 1 && active_quadrant == 4){
 			elapsed_rise_f = TRUE;
-			delta = ((ENC_PPR - 1) - delta) * - 1;
+			delta = ((ENC_PPR - 1) - delta);
 		}
 
 		accumulate_counter += delta;

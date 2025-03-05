@@ -121,7 +121,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   i2c_scanbus(&hi2c1, i2c_available);
   TMC2209_setup();
-  TMC2209_setMicrostep(TMC2209_Microsteps_128);
+  TMC2209_setMicrostep(TMC2209_Microsteps_1);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -404,7 +404,7 @@ void StartDriverTask(void const * argument){
 		TMC2209_enable();
 		TMC2209_velocity(motor_speed);
 		TMC2209_move();
-		TMC2209_watchPosition(&motor_target, &encoder_counter);
+		TMC2209_watchPosition(&motor_target, &encoder_counter, &motor_speed);
 
 //		Rotate once just for testing
 //		TMC2209_rotateOnce();
