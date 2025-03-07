@@ -45,6 +45,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
+I2C_HandleTypeDef hi2c2;
 DMA_HandleTypeDef hdma_i2c1_rx;
 
 TIM_HandleTypeDef htim2;
@@ -55,6 +56,7 @@ osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
 osThreadId driverTaskHandler;
 osThreadId encoderTaskHandler;
+osThreadId imuTaskHandler;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,11 +66,13 @@ static void MX_DMA_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_I2C2_Init(void);
 void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 void StartDriverTask(void const * argument);
 void StartEncoderTask(void const * argument);
+void StartImuTask(void const * argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -118,6 +122,7 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM2_Init();
   MX_USART1_UART_Init();
+  MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
   i2c_scanbus(&hi2c1, i2c_available);
   TMC2209_setup();
@@ -152,6 +157,9 @@ int main(void)
 
   osThreadDef(encoderTask, StartEncoderTask, osPriorityNormal, 0, 128);
   encoderTaskHandler = osThreadCreate(osThread(encoderTask), NULL);
+
+  osThreadDef(imuTask, StartImuTask, osPriorityNormal, 0, 128);
+  imuTaskHandler = osThreadCreate(osThread(imuTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
@@ -240,6 +248,40 @@ static void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
+  * @brief I2C2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C2_Init(void)
+{
+
+  /* USER CODE BEGIN I2C2_Init 0 */
+
+  /* USER CODE END I2C2_Init 0 */
+
+  /* USER CODE BEGIN I2C2_Init 1 */
+
+  /* USER CODE END I2C2_Init 1 */
+  hi2c2.Instance = I2C2;
+  hi2c2.Init.ClockSpeed = 400000;
+  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c2.Init.OwnAddress1 = 0;
+  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c2.Init.OwnAddress2 = 0;
+  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C2_Init 2 */
+
+  /* USER CODE END I2C2_Init 2 */
 
 }
 
@@ -419,6 +461,12 @@ void StartEncoderTask(void const * argument){
 		encRead();
 		encoder_counter = getCounter();
 		encGetBuffer(raw_buffer_container);
+	}
+}
+
+void StartImuTask(void const * argument){
+	for(;;){
+
 	}
 }
 /* USER CODE END 4 */

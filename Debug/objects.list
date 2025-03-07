@@ -27,6 +27,8 @@
 "./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.o"
 "./Encoder/Src/AS5600.o"
 "./Encoder/Src/Encoder.o"
+"./ImuSensor/Src/ADXL345.o"
+"./ImuSensor/Src/ImuSensor.o"
 "./Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.o"
 "./Middlewares/Third_Party/FreeRTOS/Source/croutine.o"
 "./Middlewares/Third_Party/FreeRTOS/Source/event_groups.o"
