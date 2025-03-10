@@ -14,6 +14,7 @@
 #define ADXLCS_Pin GPIO_PIN_4
 #define ADXLCS_GPIO_Port GPIOC
 #define ADXL345_I2C_ADDR (0x53 << 1)
+#define ADXL345_I2C_DEVID 0xE5
 
 
 // Registers' Address
@@ -49,8 +50,6 @@ typedef enum {ADXL_OK,ADXL_ERR} adxlStatus;
 typedef enum {ON,OFF} Switch;
 
 // Init. Definitions
-#define SPIMODE_3WIRE 1
-#define SPIMODE_4WIRE 0
 
 #define LPMODE_NORMAL 0
 #define LPMODE_LOWPOWER 1
@@ -103,7 +102,6 @@ typedef enum {ON,OFF} Switch;
 
 // Init Type Def
 typedef struct {
-	uint8_t SPIMode;
 	uint8_t IntMode;
 	uint8_t LPMode;
 	uint8_t Rate;
@@ -133,7 +131,6 @@ static void writeRegister(uint8_t address,uint8_t value);
 
 static void readRegister(uint8_t address,uint8_t * value, uint8_t num);
 
-void ADXL_dummy_test(uint8_t*);
 
 /**
 Bandwidth Settings:

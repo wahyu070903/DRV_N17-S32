@@ -26,6 +26,7 @@
 #include "uart_bus.h"
 #include "../../MotorDriver/Inc/TMC2209.h"
 #include "encoder.h"
+#include "../../ImuSensor/Inc/ImuSensor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -78,7 +79,8 @@ void StartImuTask(void const * argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 //private variable
-uint8_t i2c_available[I2C_CONNECTED_NODE] = {0};
+uint8_t i2c1_available[I2C_CONNECTED_NODE] = {0};
+uint8_t i2c2_available[I2C_CONNECTED_NODE] = {0};
 int32_t encoder_counter = 0;
 uint8_t motor_rotation = TMC2209_ROT_FWD;		//0 = CCW, 1 = CW
 float motor_speed = 40.0;	//Rps
@@ -87,6 +89,7 @@ float pid_data = 0.0;
 uint32_t driver_value = 0;
 uint16_t enc_raw = 0;
 uint8_t raw_buffer_container[2] = {0};
+uint16_t accel_data[3] = {0};
 /* USER CODE END 0 */
 
 /**
@@ -124,8 +127,18 @@ int main(void)
   MX_USART1_UART_Init();
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
-  i2c_scanbus(&hi2c1, i2c_available);
+  i2c_bus_recover(&hi2c1);
+  i2c_bus_recover(&hi2c2);
+  i2c_reset(&hi2c1);
+  i2c_reset(&hi2c2);
+  HAL_I2C_Init(&hi2c1);
+  HAL_I2C_Init(&hi2c2);
+
+//  i2c_scanbus(&hi2c1, i2c1_available);
+  i2c_scanbus(&hi2c2, i2c2_available);
+
   TMC2209_setup();
+  IMU_Init();
   TMC2209_setMicrostep(TMC2209_Microsteps_1);
   /* USER CODE END 2 */
 
@@ -267,7 +280,7 @@ static void MX_I2C2_Init(void)
 
   /* USER CODE END I2C2_Init 1 */
   hi2c2.Instance = I2C2;
-  hi2c2.Init.ClockSpeed = 400000;
+  hi2c2.Init.ClockSpeed = 100000;
   hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -466,7 +479,7 @@ void StartEncoderTask(void const * argument){
 
 void StartImuTask(void const * argument){
 	for(;;){
-
+		IMU_Compute(accel_data);
 	}
 }
 /* USER CODE END 4 */

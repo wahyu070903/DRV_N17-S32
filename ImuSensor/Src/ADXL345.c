@@ -17,13 +17,10 @@ float GAINZ = 0.0f;
 * @value  : 8-bit value of corresponding register
 * Since the register values to be written are 8-bit, there is no need to multiple writing
 */
-void writeRegister(uint8_t address,uint8_t value)
+static void writeRegister(uint8_t address,uint8_t value)
 {
-		if (address > 63)
-		address = 63;
-
-	// Setting R/W = 0, i.e.: Write Mode
-    address &= ~(0x80);
+	if (address > 0x39)
+	address = 0x39;
 
 	HAL_I2C_Mem_Write(&hi2c2, ADXL345_I2C_ADDR, address, 1, &value, 1, 10);
 }
@@ -35,26 +32,14 @@ void writeRegister(uint8_t address,uint8_t value)
 * @num		: number of bytes to be written
 */
 
-void readRegister(uint8_t address,uint8_t * value, uint8_t num)
+static void readRegister(uint8_t address,uint8_t * value, uint8_t num)
 {
-		if (address > 63)
-		address = 63;
-
-		// Multiple Byte Read Settings
-		if (num > 1)
-		address |= 0x40;
-		else
-		address &= ~(0x40);
-
-		// Setting R/W = 1, i.e.: Read Mode
-    address |= (0x80);
+	if (address > 0x39)
+	address = 0x39;
 
 	HAL_I2C_Mem_Read(&hi2c2, ADXL345_I2C_ADDR, address, 1, value, num, 100);
 }
 
-void ADXL_dummy_test(uint8_t* buffer){
-	readRegister(0x00, buffer, 1);
-}
 /**
 Bandwidth Settings:
  Setting BW_RATE register
@@ -89,27 +74,24 @@ Bandwidth Settings:
 						11 		|  				200
 						12 		|  				400
 			*/
-static void adxlBW(ADXL_InitTypeDef * adxl)
-		{
-		uint8_t bwreg=0;
+static void adxlBW(ADXL_InitTypeDef * adxl){
+	uint8_t bwreg = 0;
+	writeRegister(BW_RATE,bwreg);
+	if (adxl->LPMode == LPMODE_LOWPOWER){
+		// Low power mode
+		bwreg |= (1 << 4);
+		if ( ((adxl->Rate) <7) && ((adxl->Rate)>12) ) bwreg += 7;
+		else bwreg +=(adxl->Rate);
 		writeRegister(BW_RATE,bwreg);
-		if (adxl->LPMode == LPMODE_LOWPOWER)
-						{
-						// Low power mode
-						bwreg |= (1 << 4);
-						if ( ((adxl->Rate) <7) && ((adxl->Rate)>12) ) bwreg += 7;
-								else bwreg +=(adxl->Rate);
-						writeRegister(BW_RATE,bwreg);
-						}
-		else
-				{
-				// Normal Mode
+	}
+	else{
+		// Normal Mode
 
-				if ( ((adxl->Rate) <6) && ((adxl->Rate)>15) ) bwreg += 6;
-						else bwreg +=(adxl->Rate);
-				writeRegister(BW_RATE,bwreg);
-				}
-		}
+		if ( ((adxl->Rate) < 6) && ((adxl->Rate) > 15) ) bwreg += 6;
+		else bwreg += (adxl->Rate);
+		writeRegister(BW_RATE,bwreg);
+	}
+}
 
 
 /**
@@ -141,7 +123,7 @@ static void adxlFormat(ADXL_InitTypeDef * adxl)
 {
 	uint8_t formatreg=0;
 	writeRegister(DATA_FORMAT,formatreg);
-	formatreg = (adxl->SPIMode << 6) | (adxl->IntMode << 5) | (adxl->Justify << 2) | (adxl->Resolution << 3);
+	formatreg = (adxl->IntMode << 5) | (adxl->Justify << 2) | (adxl->Resolution << 3);
 	formatreg += (adxl -> Range);
 	writeRegister(DATA_FORMAT,formatreg);
 }
@@ -154,7 +136,7 @@ adxlStatus ADXL_Init(ADXL_InitTypeDef * adxl)
 	uint8_t testval = 0;
 	// The Device Address register is constant, i.e. = 0xE5
 	readRegister(DEVID,&testval,1);
-	if (testval != ADXL345_I2C_ADDR >> 1) return ADXL_ERR;
+	if (testval != ADXL345_I2C_DEVID) return ADXL_ERR;
 	// Init. of BW_RATE and DATAFORMAT registers
 	adxlBW(adxl);
 	adxlFormat(adxl);
@@ -181,7 +163,7 @@ adxlStatus ADXL_Init(ADXL_InitTypeDef * adxl)
 			GAINX = GAINY = GAINZ = 1/255.0f;
 			}
 	// Setting AutoSleep and Link bits
-			uint8_t reg;
+			uint8_t reg = 0;
 			readRegister(POWER_CTL,&reg,1);
 			if ( (adxl->AutoSleep) == AUTOSLEEPON) reg |= (1 << 4); else reg &= ~(1 << 4);
 			if ( (adxl->LinkMode) == LINKMODEON) reg |= (1 << 5); else reg &= ~(1 << 5);
@@ -208,23 +190,21 @@ void ADXL_getAccel(void *Data , uint8_t outputType)
 	readRegister(DATA0,data,6);
 
 
-	if (outputType == OUTPUT_SIGNED)
-		{
+	if (outputType == OUTPUT_SIGNED){
 		int16_t * acc = Data;
-	  // Two's Complement
-	  acc[0] = (int16_t) ((data[1]*256+data[0]));
-	  acc[1] = (int16_t) ((data[3]*256+data[2]));
-	  acc[2] = (int16_t) ((data[5]*256+data[4]));
-	  }
-	else if (outputType == OUTPUT_FLOAT)
-						{
-						float * fdata = Data;
-						fdata[0] = ( (int16_t) ((data[1]*256+data[0])))*GAINX;
-						fdata[1] = ( (int16_t) ((data[3]*256+data[2])))*GAINY;
-						fdata[2] = ( (int16_t) ((data[5]*256+data[4])))*GAINZ;
-
-						}
+		  // Two's Complement
+		acc[0] = (int16_t) ((data[1]*256+data[0]));
+		acc[1] = (int16_t) ((data[3]*256+data[2]));
+		acc[2] = (int16_t) ((data[5]*256+data[4]));
 	}
+	else if (outputType == OUTPUT_FLOAT){
+		float * fdata = Data;
+		fdata[0] = ( (int16_t) ((data[1]*256+data[0])))*GAINX;
+		fdata[1] = ( (int16_t) ((data[3]*256+data[2])))*GAINY;
+		fdata[2] = ( (int16_t) ((data[5]*256+data[4])))*GAINZ;
+
+	}
+}
 
 
 /** Starts Measure Mode

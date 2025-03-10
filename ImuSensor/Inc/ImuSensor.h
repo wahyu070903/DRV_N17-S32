@@ -10,5 +10,6 @@
 
 #include "ADXL345.h"
 
-
+void IMU_Init();
+void IMU_Compute(uint16_t*);
 #endif /* INC_IMUSENSOR_H_ */
