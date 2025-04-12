@@ -1,0 +1,17 @@
+../Encoder/Src/AS5600.c:12:17:AS5600_New	0	static
+../Encoder/Src/AS5600.c:226:19:AS5600_SetStartPosition	32	static
+../Encoder/Src/AS5600.c:244:19:AS5600_SetStopPosition	32	static
+../Encoder/Src/AS5600.c:262:19:AS5600_SetMaxAngle	32	static
+../Encoder/Src/AS5600.c:280:19:AS5600_SetPositiveRotationDirection	8	static
+../Encoder/Src/AS5600.c:293:19:AS5600_SetLowPowerMode	24	static
+../Encoder/Src/AS5600.c:325:19:AS5600_SetHysteresis	24	static
+../Encoder/Src/AS5600.c:357:19:AS5600_SetOutputMode	24	static
+../Encoder/Src/AS5600.c:410:19:AS5600_SetSlowFilter	24	static
+../Encoder/Src/AS5600.c:442:19:AS5600_SetFastFilterThreshold	24	static
+../Encoder/Src/AS5600.c:490:19:AS5600_SetWatchdogTimer	24	static
+../Encoder/Src/AS5600.c:514:19:AS5600_GetRawAngle	32	static
+../Encoder/Src/AS5600.c:525:19:AS5600_GetAngle	32	static
+../Encoder/Src/AS5600.c:539:19:AS5600_GetMagnetStatus	24	static
+../Encoder/Src/AS5600.c:17:26:AS5600_Init	40	static
+../Encoder/Src/AS5600.c:548:19:AS5600_GetAGCSetting	24	static
+../Encoder/Src/AS5600.c:558:19:AS5600_GetCORDICMagnitude	0	static

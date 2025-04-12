@@ -8,33 +8,18 @@
 
 #include "../Inc/ImuSensor.h"
 
-ADXL_InitTypeDef IMUSensor;
-adxlStatus initSuccess;
+MPU6050_t IMUSensor;
+extern I2C_HandleTypeDef hi2c2;
 
 void IMU_Init(){
-	IMUSensor.IntMode = INT_ACTIVEHIGH;
-	IMUSensor.AutoSleep = AUTOSLEEPOFF;
-	IMUSensor.Justify = JUSTIFY_SIGNED;
-	IMUSensor.LPMode = LPMODE_NORMAL;
-	IMUSensor.LinkMode = LINKMODEOFF;
-	IMUSensor.Range = RANGE_16G;
-	IMUSensor.Rate = BWRATE_400;
-	IMUSensor.Resolution = RESOLUTION_10BIT;
-
-	adxlStatus status =  ADXL_Init(&IMUSensor);
-	if(status == ADXL_OK){
-		ADXL_Measure(ON);
-	}
-	initSuccess = status;
+	MPU6050_Init(&hi2c2);
 }
 
-void IMU_Compute(uint16_t* result){
-	if(initSuccess != ADXL_OK) return;
-	uint16_t accel_buffer[3] = {0};
+void IMU_Compute(double* result){
+	MPU6050_Read_All(&hi2c2, &IMUSensor);
 
-	ADXL_getAccel(accel_buffer, OUTPUT_SIGNED);
+	result[0] = IMUSensor.Ax;
+	result[1] = IMUSensor.Ay;
+	result[2] = IMUSensor.Az;
 
-	result[0] = accel_buffer[0];
-	result[1] = accel_buffer[1];
-	result[2] = accel_buffer[2];
 }

@@ -101,10 +101,18 @@ typedef struct {
 
 } AS5600_TypeDef;
 
+typedef enum {
+	AS5600_INIT_OK = 0x00,
+	AS5600_INIT_ERR = 0x01,
+	AS5600_INIT_MAG_NOT = 0x02,
+	AS5600_INIT_MAG_STG = 0x03,
+	AS5600_INIT_MAG_WEK = 0x04,
+	AS5600_INIT_HAL_FAIL = 0x05,
+} AS5600Init_StatusTypedef;
 /***********************    FUNCTION PROTOTYPES    ***********************/
 
 AS5600_TypeDef *AS5600_New(void);
-HAL_StatusTypeDef AS5600_Init(AS5600_TypeDef *a);
+AS5600Init_StatusTypedef AS5600_Init(AS5600_TypeDef *a);
 
 HAL_StatusTypeDef AS5600_SetStartPosition(AS5600_TypeDef *const a,
                                           const uint16_t pos);

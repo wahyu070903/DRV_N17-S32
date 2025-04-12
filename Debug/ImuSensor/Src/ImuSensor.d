@@ -1,5 +1,5 @@
 ImuSensor/Src/ImuSensor.o: ../ImuSensor/Src/ImuSensor.c \
- ../ImuSensor/Src/../Inc/ImuSensor.h ../ImuSensor/Src/../Inc/ADXL345.h \
+ ../ImuSensor/Src/../Inc/ImuSensor.h ../ImuSensor/Src/../Inc/mpu6050.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h \
  ../Core/Inc/stm32f1xx_hal_conf.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h \
@@ -27,7 +27,7 @@ ImuSensor/Src/ImuSensor.o: ../ImuSensor/Src/ImuSensor.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
 ../ImuSensor/Src/../Inc/ImuSensor.h:
-../ImuSensor/Src/../Inc/ADXL345.h:
+../ImuSensor/Src/../Inc/mpu6050.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h:

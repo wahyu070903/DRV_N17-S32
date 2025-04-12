@@ -1,2 +1,0 @@
-../Core/Src/uart_bus.c:14:6:initOneWireTransmission	1
-../Core/Src/uart_bus.c:19:6:HAL_UARTEx_RxEventCallback	1

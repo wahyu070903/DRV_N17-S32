@@ -14,8 +14,8 @@ AS5600_TypeDef *AS5600_New(void) {
     return a;
 }
 
-HAL_StatusTypeDef AS5600_Init(AS5600_TypeDef *a) {
-    HAL_StatusTypeDef status = HAL_OK;
+AS5600Init_StatusTypedef AS5600_Init(AS5600_TypeDef *a) {
+    HAL_StatusTypeDef status = AS5600_INIT_OK;
     uint8_t pwm = 0;
     uint8_t mag_status = 0;
     /* Set configuration defaults for uninitialized values. */
@@ -63,7 +63,7 @@ HAL_StatusTypeDef AS5600_Init(AS5600_TypeDef *a) {
             break;
         default:
             /* Invalid low power mode specified */
-            status = HAL_ERROR;
+            status = AS5600_INIT_ERR;
             return status;
     }
     switch (a->Hysteresis) {
@@ -83,7 +83,7 @@ HAL_StatusTypeDef AS5600_Init(AS5600_TypeDef *a) {
             break;
         default:
             /* Invalid hysteresis mode specified */
-            status = HAL_ERROR;
+            status = AS5600_INIT_ERR;
             return status;
     }
     switch (a->OutputMode) {
@@ -101,7 +101,7 @@ HAL_StatusTypeDef AS5600_Init(AS5600_TypeDef *a) {
             break;
         default:
             /* Invalid output mode specified */
-            status = HAL_ERROR;
+            status = AS5600_INIT_ERR;
             return status;
     }
     if (pwm) {
@@ -122,7 +122,7 @@ HAL_StatusTypeDef AS5600_Init(AS5600_TypeDef *a) {
                 break;
             default:
                 /* Invalid PWM frequency specified. */
-                status = HAL_ERROR;
+                status = AS5600_INIT_ERR;
                 return status;
         }
     }
@@ -143,7 +143,7 @@ HAL_StatusTypeDef AS5600_Init(AS5600_TypeDef *a) {
             break;
         default:
             /* Invalid slow filter mode specified */
-            status = HAL_ERROR;
+            status = AS5600_INIT_ERR;
             return status;
     }
     switch (a->FastFilterThreshold) {
@@ -179,7 +179,7 @@ HAL_StatusTypeDef AS5600_Init(AS5600_TypeDef *a) {
             break;
         default:
             /* Invalid slow filter mode specified */
-            status = HAL_ERROR;
+            status = AS5600_INIT_ERR;
             return status;
     }
     switch (a->WatchdogTimer) {
@@ -191,31 +191,31 @@ HAL_StatusTypeDef AS5600_Init(AS5600_TypeDef *a) {
             break;
         default:
             /* Invalid watchdog state specified */
-            status = HAL_ERROR;
+            status = AS5600_INIT_ERR;
             return status;
     }
-    if (HAL_I2C_Mem_Write_IT(a->i2cHandle, a->i2cAddr, AS5600_REGISTER_CONF_HIGH, I2C_MEMADD_SIZE_8BIT, a->confRegister, 2) != HAL_OK) {
-        status = HAL_ERROR;
+    if (HAL_I2C_Mem_Write(a->i2cHandle, a->i2cAddr, AS5600_REGISTER_CONF_HIGH, I2C_MEMADD_SIZE_8BIT, a->confRegister, 2, 10) != HAL_OK) {
+        status = AS5600_INIT_HAL_FAIL;
         return status;
     }
     /* Check magnet status */
     if (AS5600_GetMagnetStatus(a, &mag_status) != HAL_OK) {
-        status = HAL_ERROR;
+        status = AS5600_INIT_HAL_FAIL;
         return status;
     }
     if (!(mag_status & AS5600_MAGNET_DETECTED)) {
         /* Magnet not detected */
-        status = HAL_ERROR;
+        status = AS5600_INIT_MAG_NOT;
         return status;
     }
     if ((mag_status & AS5600_AGC_MIN_GAIN_OVERFLOW)) {
         /* B-field is too strong */
-        status = HAL_ERROR;
+        status = AS5600_INIT_MAG_STG;
         return status;
     }
     if ((mag_status & AS5600_AGC_MAX_GAIN_OVERFLOW)) {
         /* B-field is too weak */
-        status = HAL_ERROR;
+        status = AS5600_INIT_MAG_WEK;
         return status;
     }
     /* Write */
@@ -232,9 +232,9 @@ HAL_StatusTypeDef AS5600_SetStartPosition(AS5600_TypeDef *const a,
         8); /* Zero out upper four bits of argument and shift out lower four
                bits */
     data[1] = (uint8_t)pos;
-    if (HAL_I2C_Mem_Write_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Write(a->i2cHandle, a->i2cAddr,
                              AS5600_REGISTER_ZPOS_HIGH, I2C_MEMADD_SIZE_8BIT,
-                             data, 2) != HAL_OK) {
+                             data, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
 
@@ -250,9 +250,9 @@ HAL_StatusTypeDef AS5600_SetStopPosition(AS5600_TypeDef *const a,
         8); /* Zero out upper four bits of argument and shift out lower four
                bits */
     data[1] = (uint8_t)pos;
-    if (HAL_I2C_Mem_Write_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Write(a->i2cHandle, a->i2cAddr,
                              AS5600_REGISTER_MPOS_HIGH, I2C_MEMADD_SIZE_8BIT,
-                             data, 2) != HAL_OK) {
+                             data, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
 
@@ -268,9 +268,9 @@ HAL_StatusTypeDef AS5600_SetMaxAngle(AS5600_TypeDef *const a,
                                 argument and shift out lower four
                                 bits */
     data[1] = (uint8_t)angle;
-    if (HAL_I2C_Mem_Write_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Write(a->i2cHandle, a->i2cAddr,
                              AS5600_REGISTER_MANG_HIGH, I2C_MEMADD_SIZE_8BIT,
-                             data, 2) != HAL_OK) {
+                             data, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
 
@@ -313,9 +313,9 @@ HAL_StatusTypeDef AS5600_SetLowPowerMode(AS5600_TypeDef *const a,
             status = HAL_ERROR;
             return status;
     }
-    if (HAL_I2C_Mem_Write_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Write(a->i2cHandle, a->i2cAddr,
                              AS5600_REGISTER_CONF_HIGH, I2C_MEMADD_SIZE_8BIT,
-                             a->confRegister, 2) != HAL_OK) {
+                             a->confRegister, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
 
@@ -345,9 +345,9 @@ HAL_StatusTypeDef AS5600_SetHysteresis(AS5600_TypeDef *const a,
             status = HAL_ERROR;
             return status;
     }
-    if (HAL_I2C_Mem_Write_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Write(a->i2cHandle, a->i2cAddr,
                              AS5600_REGISTER_CONF_HIGH, I2C_MEMADD_SIZE_8BIT,
-                             a->confRegister, 2) != HAL_OK) {
+                             a->confRegister, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
 
@@ -398,9 +398,9 @@ HAL_StatusTypeDef AS5600_SetOutputMode(AS5600_TypeDef *const a,
                 return status;
         }
     }
-    if (HAL_I2C_Mem_Write_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Write(a->i2cHandle, a->i2cAddr,
                              AS5600_REGISTER_CONF_HIGH, I2C_MEMADD_SIZE_8BIT,
-                             a->confRegister, 2) != HAL_OK) {
+                             a->confRegister, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
 
@@ -430,9 +430,9 @@ HAL_StatusTypeDef AS5600_SetSlowFilter(AS5600_TypeDef *const a,
             status = HAL_ERROR;
             return status;
     }
-    if (HAL_I2C_Mem_Write_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Write(a->i2cHandle, a->i2cAddr,
                              AS5600_REGISTER_CONF_HIGH, I2C_MEMADD_SIZE_8BIT,
-                             a->confRegister, 2) != HAL_OK) {
+                             a->confRegister, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
 
@@ -478,9 +478,9 @@ HAL_StatusTypeDef AS5600_SetFastFilterThreshold(AS5600_TypeDef *const a,
             status = HAL_ERROR;
             return status;
     }
-    if (HAL_I2C_Mem_Write_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Write(a->i2cHandle, a->i2cAddr,
                              AS5600_REGISTER_CONF_HIGH, I2C_MEMADD_SIZE_8BIT,
-                             a->confRegister, 2) != HAL_OK) {
+                             a->confRegister, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
 
@@ -502,9 +502,9 @@ HAL_StatusTypeDef AS5600_SetWatchdogTimer(AS5600_TypeDef *const a,
             status = HAL_ERROR;
             return status;
     }
-    if (HAL_I2C_Mem_Write_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Write(a->i2cHandle, a->i2cAddr,
                              AS5600_REGISTER_CONF_HIGH, I2C_MEMADD_SIZE_8BIT,
-                             a->confRegister, 2) != HAL_OK) {
+                             a->confRegister, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
 
@@ -526,9 +526,9 @@ HAL_StatusTypeDef AS5600_GetAngle(AS5600_TypeDef *const a,
                                   uint16_t *const angle) {
     HAL_StatusTypeDef status = HAL_OK;
     uint8_t data[2] = {0};
-    if (HAL_I2C_Mem_Read_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Read(a->i2cHandle, a->i2cAddr,
                             AS5600_REGISTER_ANGLE_HIGH, I2C_MEMADD_SIZE_8BIT,
-                            data, 2) != HAL_OK) {
+                            data, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
     *angle = ((data[0] << 8) | data[1]);
@@ -538,19 +538,18 @@ HAL_StatusTypeDef AS5600_GetAngle(AS5600_TypeDef *const a,
 
 HAL_StatusTypeDef AS5600_GetMagnetStatus(AS5600_TypeDef *const a, uint8_t *const stat) {
     HAL_StatusTypeDef status = HAL_OK;
-    if (HAL_I2C_Mem_Read_IT(a->i2cHandle, a->i2cAddr, AS5600_REGISTER_STATUS,
-                            I2C_MEMADD_SIZE_8BIT, stat, 1) != HAL_OK) {
-        status = HAL_ERROR;
+    if(HAL_I2C_Mem_Read(a->i2cHandle, a->i2cAddr, AS5600_REGISTER_STATUS,
+            I2C_MEMADD_SIZE_8BIT, stat, 1, 10) != HAL_OK){
+    	status = HAL_ERROR;
     }
-
     return status;
 }
 
 HAL_StatusTypeDef AS5600_GetAGCSetting(AS5600_TypeDef *const a,
                                        uint8_t *const agc) {
     HAL_StatusTypeDef status = HAL_OK;
-    if (HAL_I2C_Mem_Read_IT(a->i2cHandle, a->i2cAddr, AS5600_REGISTER_AGC,
-                            I2C_MEMADD_SIZE_8BIT, agc, 1) != HAL_OK) {
+    if (HAL_I2C_Mem_Read(a->i2cHandle, a->i2cAddr, AS5600_REGISTER_AGC,
+                            I2C_MEMADD_SIZE_8BIT, agc, 1, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
     return status;
@@ -560,9 +559,9 @@ HAL_StatusTypeDef AS5600_GetCORDICMagnitude(AS5600_TypeDef *const a,
                                             uint16_t *const mag) {
     HAL_StatusTypeDef status = HAL_OK;
     uint8_t data[2] = {0};
-    if (HAL_I2C_Mem_Read_IT(a->i2cHandle, a->i2cAddr,
+    if (HAL_I2C_Mem_Read(a->i2cHandle, a->i2cAddr,
                             AS5600_REGISTER_ANGLE_HIGH, I2C_MEMADD_SIZE_8BIT,
-                            data, 2) != HAL_OK) {
+                            data, 2, 10) != HAL_OK) {
         status = HAL_ERROR;
     }
     *mag = ((data[0] << 8) | data[1]);

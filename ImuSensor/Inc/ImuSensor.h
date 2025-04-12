@@ -8,8 +8,8 @@
 #ifndef INC_IMUSENSOR_H_
 #define INC_IMUSENSOR_H_
 
-#include "ADXL345.h"
+#include "mpu6050.h"
 
 void IMU_Init();
-void IMU_Compute(uint16_t*);
+void IMU_Compute(double*);
 #endif /* INC_IMUSENSOR_H_ */

@@ -1,10 +1,9 @@
 /*
  * i2c_bus.c
  *
- *  Created on: Jan 23, 2025
+ *  Created on: Apr 10, 2025
  *      Author: Orsted
  */
-
 
 #include "i2c_bus.h"
 

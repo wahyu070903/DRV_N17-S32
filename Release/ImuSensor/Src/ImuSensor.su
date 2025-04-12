@@ -1,0 +1,2 @@
+../ImuSensor/Src/ImuSensor.c:14:6:IMU_Init	0	static
+../ImuSensor/Src/ImuSensor.c:18:6:IMU_Compute	16	static

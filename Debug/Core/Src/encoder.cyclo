@@ -1,7 +1,0 @@
-../Core/Src/encoder.c:25:6:encChangeDir	3
-../Core/Src/encoder.c:37:6:encGetAngle	1
-../Core/Src/encoder.c:47:6:encRead	1
-../Core/Src/encoder.c:51:9:getCounter	1
-../Core/Src/encoder.c:55:6:encGetBuffer	1
-../Core/Src/encoder.c:60:10:lowPassFilter	3
-../Core/Src/encoder.c:74:6:HAL_I2C_MemRxCpltCallback	14

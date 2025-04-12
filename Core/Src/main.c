@@ -23,10 +23,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "i2c_bus.h"
-#include "uart_bus.h"
 #include "../../MotorDriver/Inc/TMC2209.h"
-#include "encoder.h"
+#include "../../Encoder/Inc/Encoder.h"
+//#include "encoder.h"
 #include "../../ImuSensor/Inc/ImuSensor.h"
+#include "watcher.h"
+#include "../../Encoder/Inc/encoder_calib.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,7 +49,6 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
-DMA_HandleTypeDef hdma_i2c1_rx;
 
 TIM_HandleTypeDef htim2;
 
@@ -58,12 +59,12 @@ osThreadId defaultTaskHandle;
 osThreadId driverTaskHandler;
 osThreadId encoderTaskHandler;
 osThreadId imuTaskHandler;
+osThreadId watcherTaskHandler;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
@@ -74,13 +75,14 @@ void StartDefaultTask(void const * argument);
 void StartDriverTask(void const * argument);
 void StartEncoderTask(void const * argument);
 void StartImuTask(void const * argument);
+void StartWatcherTask(void const * argument);
+
+void suspendTaskEcpectSelf(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 //private variable
-uint8_t i2c1_available[I2C_CONNECTED_NODE] = {0};
-uint8_t i2c2_available[I2C_CONNECTED_NODE] = {0};
 int32_t encoder_counter = 0;
 uint8_t motor_rotation = TMC2209_ROT_FWD;		//0 = CCW, 1 = CW
 float motor_speed = 40.0;	//Rps
@@ -89,7 +91,16 @@ float pid_data = 0.0;
 uint32_t driver_value = 0;
 uint16_t enc_raw = 0;
 uint8_t raw_buffer_container[2] = {0};
-uint16_t accel_data[3] = {0};
+double accel_data[3] = {0};
+uint8_t cycleErr = 0;
+uint8_t mag_buff = 0;
+
+uint8_t encoderReady_f = 0;
+uint8_t imuReady_f = 0;
+uint8_t driverReady_f = 0;
+uint8_t allReady_f = 0;
+
+uint8_t rotasi = 0;
 /* USER CODE END 0 */
 
 /**
@@ -121,7 +132,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_I2C1_Init();
   MX_TIM2_Init();
   MX_USART1_UART_Init();
@@ -134,12 +144,15 @@ int main(void)
   HAL_I2C_Init(&hi2c1);
   HAL_I2C_Init(&hi2c2);
 
-//  i2c_scanbus(&hi2c1, i2c1_available);
-  i2c_scanbus(&hi2c2, i2c2_available);
-
   TMC2209_setup();
-  IMU_Init();
+  HAL_StatusTypeDef encoderStatus =  EncoderInit();
+  if(encoderStatus == HAL_OK) encoderReady_f = TRUE;
+//  IMU_Init();
   TMC2209_setMicrostep(TMC2209_Microsteps_1);
+
+  if(encoderReady_f){
+//	  encoderCalibRun();
+  }
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -173,6 +186,9 @@ int main(void)
 
   osThreadDef(imuTask, StartImuTask, osPriorityNormal, 0, 128);
   imuTaskHandler = osThreadCreate(osThread(imuTask), NULL);
+
+  osThreadDef(watcherTask, StartWatcherTask, osPriorityNormal, 0, 128);
+  watcherTaskHandler = osThreadCreate(osThread(watcherTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
@@ -381,22 +397,6 @@ static void MX_USART1_UART_Init(void)
 }
 
 /**
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void)
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA1_Channel7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
-
-}
-
-/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -456,31 +456,38 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void StartDriverTask(void const * argument){
 	for(;;){
+
 		TMC2209_enable();
-		TMC2209_velocity(motor_speed);
-		TMC2209_move();
 		TMC2209_watchPosition(&motor_target, &encoder_counter, &motor_speed);
-
-//		Rotate once just for testing
-//		TMC2209_rotateOnce();
-
-//		osDelay(5000);
 	}
 }
 
 void StartEncoderTask(void const * argument){
 	for(;;){
-//		encChangeDir(motor_rotation);
-		encRead();
-		encoder_counter = getCounter();
-		encGetBuffer(raw_buffer_container);
+		if(!encoderReady_f) return;
+		encoder_counter = EncoderEnablePool();
 	}
 }
 
 void StartImuTask(void const * argument){
 	for(;;){
-		IMU_Compute(accel_data);
 	}
+}
+
+void StartWatcherTask(void const * argument){
+	for(;;){
+		if(getSysStatus() == WATCHER_ERROR && cycleErr == FALSE){
+			cycleErr = TRUE;
+			suspendTaskEcpectSelf();
+		}
+		displaySysStat();
+	}
+}
+
+void suspendTaskEcpectSelf(){
+	vTaskSuspend(driverTaskHandler);
+	vTaskSuspend(encoderTaskHandler);
+	vTaskSuspend(imuTaskHandler);
 }
 /* USER CODE END 4 */
 
@@ -497,7 +504,7 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+
   }
   /* USER CODE END 5 */
 }

@@ -1,0 +1,2 @@
+../Encoder/Src/encoder_calib.c:13:6:encoderCalibRun	24	static
+../Encoder/Src/encoder_calib.c:50:9:encoderCalib20KhzRun	16	static

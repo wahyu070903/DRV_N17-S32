@@ -1,0 +1,3 @@
+../Core/Src/watcher.c:12:6:emmitSysError	0	static
+../Core/Src/watcher.c:17:9:getSysStatus	0	static
+../Core/Src/watcher.c:21:6:displaySysStat	8	static

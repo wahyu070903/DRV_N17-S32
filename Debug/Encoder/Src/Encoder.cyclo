@@ -1,2 +1,4 @@
-../Encoder/Src/Encoder.c:14:6:encoder_init	2
-../Encoder/Src/Encoder.c:24:6:encoder_getAngle	2
+../Encoder/Src/Encoder.c:22:19:EncoderInit	3
+../Encoder/Src/Encoder.c:42:19:EncoderGetMagAlingment	2
+../Encoder/Src/Encoder.c:53:6:EncoderGetAngle	2
+../Encoder/Src/Encoder.c:61:9:EncoderEnablePool	9

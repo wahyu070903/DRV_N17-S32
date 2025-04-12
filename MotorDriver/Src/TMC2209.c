@@ -13,6 +13,8 @@ extern TIM_HandleTypeDef htim2;
 TMC2209_chopConfig chopConfig;
 TMC2209_gconf_reg_t gconfConfig;
 TMC2209_slaveconf_reg_t slaveConfig;
+TMC2209_ihold_irun_reg_t iholdIrun;
+TMC2209_pwmconf_reg_t pwmConfig;
 
 static uint8_t toff_ = TOFF_DEFAULT;
 static uint8_t PWM_Pulse_Complete = TRUE;
@@ -29,11 +31,19 @@ static float pid_output = 0;
 static float pid_fraction = 0;
 static uint32_t pid_last_time = 0;
 
+static uint8_t oneStepMove_finish = FALSE;
+static uint8_t oneStepMove_start = FALSE;
+
+static uint8_t isBrake = FALSE;
 void TMC2209_setdefault()
 {
 	gconfConfig.I_scale_analog = TRUE;
 	gconfConfig.multistep_filt = TRUE;
 	chopConfig.bytes = CHOPPER_CONFIG_DEFAULT;
+	pwmConfig.bytes = PWMCONF_CONFIG_DEFAULT;
+	iholdIrun.ihold = TMC_IRUNDEFAULT;
+	iholdIrun.iholddelay = TMC_IHOLDDELAY;
+	iholdIrun.irun = TMC_IRUNDEFAULT;
 }
 
 void TMC2209_setup()
@@ -44,12 +54,26 @@ void TMC2209_setup()
 	gconfConfig.pdn_disable = TRUE;
 	gconfConfig.multistep_filt = TRUE;
 	gconfConfig.mstep_reg_select = TRUE;
-
 	slaveConfig.conf = 0x00;
 
-	TMC2209_HAL_Write(TMC2209Reg_GCONF, gconfConfig.bytes);
-	TMC2209_HAL_Write(TMC2209Reg_SLAVECONF, slaveConfig.bytes);
-//	TMC2209_setMicrostep(TMC2209_Microsteps_1);
+	uint8_t timeout_cnt = 0;
+	TMC2209_gconf_reg_t gconf_verif;
+	while(timeout_cnt < TMC_SETUP_TIMEOUT){
+		TMC2209_HAL_Write(TMC2209Reg_GCONF, gconfConfig.bytes);
+		TMC2209_HAL_Write(TMC2209Reg_SLAVECONF, slaveConfig.bytes);
+
+		TMC2209_HAL_Read(TMC2209Reg_GCONF, &gconf_verif.bytes);
+		if(gconf_verif.bytes == gconfConfig.bytes) break;
+		else{
+			HAL_Delay(100);
+		}
+		timeout_cnt++;
+	}
+	if(timeout_cnt >= TMC_SETUP_TIMEOUT){
+		WATCHER_ERR_STAT err = WATCHER_DRV_FAULT;
+		emmitSysError(err);
+	}
+
 	TMC2209_disable();
 	HAL_Delay(100);
 }
@@ -94,6 +118,7 @@ void TMC2209_velocity(float velocity)
 	uint16_t prescaller = TMC2209_DEFAULT_PRESCALLER;
 
 	if(vel_now == velocity) return;
+	if(velocity < 0.01f) velocity = 0.01f;
 	if(velocity <= 0) {
 		HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
 		PWM_Pulse_Complete = TRUE;
@@ -116,6 +141,7 @@ void TMC2209_velocity(float velocity)
 }
 
 void TMC2209_move(){
+	if(isBrake) return;
 	if(PWM_Pulse_Complete == TRUE){
 		HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
 		PWM_Pulse_Complete = FALSE;
@@ -128,7 +154,28 @@ void TMC2209_stop(){
 		PWM_Pulse_Complete = TRUE;
 	}
 }
+void TMC2209_brake(){
+	// !NOTE nanti cek apa sudah mode spreadcycle
+	if(!PWM_Pulse_Complete) return;
+	if(!isBrake){
+		iholdIrun.ihold = 0;
+		pwmConfig.freewheel = TMC_FREEWHEEL_BRAKE;
+		TMC2209_HAL_Write(TMC2209Reg_IHOLD_IRUN, iholdIrun.bytes);
+		TMC2209_HAL_Write(TMC2209Reg_PWMCONF, pwmConfig.bytes);
 
+		isBrake = TRUE;
+	}
+}
+void TMC2209_unBrake(){
+	if(isBrake){
+		iholdIrun.ihold = 16;
+		pwmConfig.freewheel = TMC_FREEWHEEL_NORMAL;
+		TMC2209_HAL_Write(TMC2209Reg_IHOLD_IRUN, iholdIrun.bytes);
+		TMC2209_HAL_Write(TMC2209Reg_PWMCONF, pwmConfig.bytes);
+
+		isBrake = FALSE;
+	}
+}
 void TMC2209_direction(uint8_t direction){
 	if(direction == rotation_dir) return;
 
@@ -145,22 +192,24 @@ void TMC2209_direction(uint8_t direction){
 void PID_controller(int32_t* setpoint, int32_t *current, float* result){
 	uint32_t time_now = HAL_GetTick();
 	if(time_now - pid_last_time >= PID_SAMPLING){
+		float delta_time = (float)(time_now - pid_last_time) / 1000.0f;
 		pid_error = (float)(*setpoint - *current);
 
 		if(fabs(pid_error) < PID_DEADBAND){
 			*result = 0;
+			pid_last_time = time_now;
 			return;
 		}
 
 		if(fabs(pid_error) > PID_INTEGRAL_TRESHOLD){
-			pid_integral += pid_error;
+			pid_integral += pid_error * delta_time;
 			if(pid_integral > PID_INTEGRAL_MAX) pid_integral = PID_INTEGRAL_MAX;
 			if(pid_integral < PID_INTEGRAL_MIN) pid_integral = PID_INTEGRAL_MIN;
 		}else{
-			pid_integral = 0;
+			pid_integral *= 0.9f;
 		}
 
-		float direvative = (pid_error - pid_last_error) / (time_now - pid_last_time);
+		float direvative = (pid_error - pid_last_error) / delta_time;
 		pid_direvative = (pid_direvative * 0.9f) + (direvative * 0.1f);
 
 		pid_output = (PID_KP * pid_error) + (PID_KI * pid_integral) + (PID_KD * pid_direvative);
@@ -175,6 +224,15 @@ void TMC2209_watchPosition(int32_t* target, int32_t* counter, float* speed){
 
 	PID_controller(target, counter, &pid_fraction);
 
+	int32_t error = *target - *counter;
+	if(error == 0){
+		TMC2209_stop();
+		*speed = 0;
+		return;
+	}else{
+		TMC2209_move();
+	}
+
 	if(*counter > *target) TMC2209_direction(TMC2209_ROT_FWD);
 	if(*counter < *target) TMC2209_direction(TMC2209_ROT_REV);
 
@@ -187,8 +245,9 @@ void TMC2209_watchPosition(int32_t* target, int32_t* counter, float* speed){
 			TMC2209_setMicrostep(TMC2209_Microsteps_64);
 		}
 	}
-	*speed = pid_fraction * MAX_SPEED;
 
+	*speed = pid_fraction * MAX_SPEED;
+	TMC2209_velocity(*speed);
 }
 
 void TMC2209_getDirection(uint8_t* result){
@@ -207,9 +266,23 @@ void TMC2209_rotateOnce(){
 	}
 }
 
+void TMC2209_moveOneStep(){
+	oneStepMove_finish = FALSE;
+	HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
+	oneStepMove_start = TRUE;
+	while(!oneStepMove_finish);
+
+	HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
+
+}
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM2) {
+		if(oneStepMove_start){
+			oneStepMove_finish = TRUE;
+			oneStepMove_start = FALSE;
+		}
+
 		stepCounter ++;
 	}
 }

@@ -1,0 +1,3 @@
+../MotorDriver/Src/TMC2209_HAL.c:12:13:calculateCRC	4
+../MotorDriver/Src/TMC2209_HAL.c:41:19:TMC2209_HAL_Write	1
+../MotorDriver/Src/TMC2209_HAL.c:58:19:TMC2209_HAL_Read	5
