@@ -25,8 +25,6 @@
 #include "i2c_bus.h"
 #include "../../MotorDriver/Inc/TMC2209.h"
 #include "../../Encoder/Inc/Encoder.h"
-//#include "encoder.h"
-#include "../../ImuSensor/Inc/ImuSensor.h"
 #include "watcher.h"
 #include "../../Encoder/Inc/encoder_calib.h"
 /* USER CODE END Includes */
@@ -48,17 +46,16 @@
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
-I2C_HandleTypeDef hi2c2;
 
 TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart3;
 
 osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
 osThreadId driverTaskHandler;
 osThreadId encoderTaskHandler;
-osThreadId imuTaskHandler;
 osThreadId watcherTaskHandler;
 /* USER CODE END PV */
 
@@ -68,7 +65,7 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
-static void MX_I2C2_Init(void);
+static void MX_USART3_UART_Init(void);
 void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
@@ -100,7 +97,8 @@ uint8_t imuReady_f = 0;
 uint8_t driverReady_f = 0;
 uint8_t allReady_f = 0;
 
-uint8_t rotasi = 0;
+int error_codes = -1;
+
 /* USER CODE END 0 */
 
 /**
@@ -135,14 +133,11 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM2_Init();
   MX_USART1_UART_Init();
-  MX_I2C2_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   i2c_bus_recover(&hi2c1);
-  i2c_bus_recover(&hi2c2);
   i2c_reset(&hi2c1);
-  i2c_reset(&hi2c2);
   HAL_I2C_Init(&hi2c1);
-  HAL_I2C_Init(&hi2c2);
 
   TMC2209_setup();
   HAL_StatusTypeDef encoderStatus =  EncoderInit();
@@ -183,9 +178,6 @@ int main(void)
 
   osThreadDef(encoderTask, StartEncoderTask, osPriorityNormal, 0, 128);
   encoderTaskHandler = osThreadCreate(osThread(encoderTask), NULL);
-
-  osThreadDef(imuTask, StartImuTask, osPriorityNormal, 0, 128);
-  imuTaskHandler = osThreadCreate(osThread(imuTask), NULL);
 
   osThreadDef(watcherTask, StartWatcherTask, osPriorityNormal, 0, 128);
   watcherTaskHandler = osThreadCreate(osThread(watcherTask), NULL);
@@ -281,40 +273,6 @@ static void MX_I2C1_Init(void)
 }
 
 /**
-  * @brief I2C2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C2_Init(void)
-{
-
-  /* USER CODE BEGIN I2C2_Init 0 */
-
-  /* USER CODE END I2C2_Init 0 */
-
-  /* USER CODE BEGIN I2C2_Init 1 */
-
-  /* USER CODE END I2C2_Init 1 */
-  hi2c2.Instance = I2C2;
-  hi2c2.Init.ClockSpeed = 100000;
-  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c2.Init.OwnAddress1 = 0;
-  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c2.Init.OwnAddress2 = 0;
-  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2C2_Init 2 */
-
-  /* USER CODE END I2C2_Init 2 */
-
-}
-
-/**
   * @brief TIM2 Initialization Function
   * @param None
   * @retval None
@@ -397,6 +355,39 @@ static void MX_USART1_UART_Init(void)
 }
 
 /**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 9600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -456,7 +447,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void StartDriverTask(void const * argument){
 	for(;;){
-
+		if(cycleErr) return;
 		TMC2209_enable();
 		TMC2209_watchPosition(&motor_target, &encoder_counter, &motor_speed);
 	}
@@ -464,13 +455,10 @@ void StartDriverTask(void const * argument){
 
 void StartEncoderTask(void const * argument){
 	for(;;){
+		uint8_t data[] = "Hello world\n";
 		if(!encoderReady_f) return;
 		encoder_counter = EncoderEnablePool();
-	}
-}
-
-void StartImuTask(void const * argument){
-	for(;;){
+		HAL_UART_Transmit(&huart3, data, 12, 1000);
 	}
 }
 
@@ -478,6 +466,7 @@ void StartWatcherTask(void const * argument){
 	for(;;){
 		if(getSysStatus() == WATCHER_ERROR && cycleErr == FALSE){
 			cycleErr = TRUE;
+			error_codes = getSysError();
 			suspendTaskEcpectSelf();
 		}
 		displaySysStat();
@@ -487,7 +476,6 @@ void StartWatcherTask(void const * argument){
 void suspendTaskEcpectSelf(){
 	vTaskSuspend(driverTaskHandler);
 	vTaskSuspend(encoderTaskHandler);
-	vTaskSuspend(imuTaskHandler);
 }
 /* USER CODE END 4 */
 
@@ -504,7 +492,7 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-
+    osDelay(1);
   }
   /* USER CODE END 5 */
 }

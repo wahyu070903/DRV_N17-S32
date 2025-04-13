@@ -29,6 +29,7 @@ typedef struct{
 } WATCHER_t;
 
 uint8_t getSysStatus();
+uint8_t getSysError();
 void emmitSysError(WATCHER_ERR_STAT);
 void resetSysError();
 void displaySysStat();
