@@ -18,8 +18,11 @@ uint8_t getSysStatus(){
 	return watcher.detail;
 };
 
+uint8_t getSysError(){
+	return watcher.stat;
+}
 void displaySysStat(){
-	if(watcher.stat == WATCHER_ERROR){
+	if(watcher.detail == WATCHER_ERROR){
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
 		HAL_Delay(100);
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);

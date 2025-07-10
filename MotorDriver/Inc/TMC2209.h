@@ -23,9 +23,9 @@
 #define TOFF_DISABLE 0
 #define MAX_SPEED 260	//240-260
 #define MIN_SPEED 0
-#define PID_KP 8.2708452120852
-#define PID_KI 12.4490125384368
-#define PID_KD 20.65704903214755
+#define PID_KP 1.2
+#define PID_KI 2.2
+#define PID_KD 12.4
 #define PID_MAX 1000.0f
 #define PID_INTEGRAL_MAX 1000000.0f
 #define PID_INTEGRAL_MIN 0.0f
@@ -162,6 +162,31 @@ typedef union {
     };
 } TMC2209_pwmconf_reg_t;
 
+typedef union {
+    uint32_t value;
+    struct {
+        uint32_t
+        otpw       :1,
+        ot         :1,
+        s2ga       :1,
+        s2gb       :1,
+        s2vsa      :1,
+        s2vsb      :1,
+        ola        :1,
+        olb        :1,
+        t120       :1,
+        t143       :1,
+        t150       :1,
+        t157       :1,
+        reserved1  :4,
+        cs_actual  :5,
+        reserved2  :3,
+        reserved3  :6,
+        stealth    :1,
+        stst       :1;
+    };
+} TMC2209_drv_status_reg_t;
+
 typedef enum {
 	TMC2209_Microsteps_1 	= 0b1000,
 	TMC2209_Microsteps_2 	= 0b0111,
@@ -187,4 +212,5 @@ void TMC2209_direction(uint8_t);
 void TMC2209_getDirection(uint8_t*);
 void TMC2209_rotateOnce();
 void TMC2209_moveOneStep();
+void TMC2209_safetyWatch();
 #endif /* INC_TMC2209_H_ */

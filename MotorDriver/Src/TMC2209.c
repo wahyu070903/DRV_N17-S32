@@ -13,8 +13,6 @@ extern TIM_HandleTypeDef htim2;
 TMC2209_chopConfig chopConfig;
 TMC2209_gconf_reg_t gconfConfig;
 TMC2209_slaveconf_reg_t slaveConfig;
-TMC2209_ihold_irun_reg_t iholdIrun;
-TMC2209_pwmconf_reg_t pwmConfig;
 
 static uint8_t toff_ = TOFF_DEFAULT;
 static uint8_t PWM_Pulse_Complete = TRUE;
@@ -35,25 +33,25 @@ static uint8_t oneStepMove_finish = FALSE;
 static uint8_t oneStepMove_start = FALSE;
 
 static uint8_t isBrake = FALSE;
+
 void TMC2209_setdefault()
 {
 	gconfConfig.I_scale_analog = TRUE;
+	gconfConfig.internal_Rsense = FALSE;
+	gconfConfig.shaft = FALSE;
+	gconfConfig.pdn_disable = TRUE;
+	gconfConfig.mstep_reg_select = TRUE;
 	gconfConfig.multistep_filt = TRUE;
+	gconfConfig.bytes = FALSE;
+	gconfConfig.I_scale_analog = TRUE;
+	gconfConfig.multistep_filt = TRUE;
+
 	chopConfig.bytes = CHOPPER_CONFIG_DEFAULT;
-	pwmConfig.bytes = PWMCONF_CONFIG_DEFAULT;
-	iholdIrun.ihold = TMC_IRUNDEFAULT;
-	iholdIrun.iholddelay = TMC_IHOLDDELAY;
-	iholdIrun.irun = TMC_IRUNDEFAULT;
 }
 
 void TMC2209_setup()
 {
 	TMC2209_setdefault();
-	gconfConfig.bytes = FALSE;
-	gconfConfig.I_scale_analog = TRUE;
-	gconfConfig.pdn_disable = TRUE;
-	gconfConfig.multistep_filt = TRUE;
-	gconfConfig.mstep_reg_select = TRUE;
 	slaveConfig.conf = 0x00;
 
 	uint8_t timeout_cnt = 0;
@@ -154,28 +152,6 @@ void TMC2209_stop(){
 		PWM_Pulse_Complete = TRUE;
 	}
 }
-void TMC2209_brake(){
-	// !NOTE nanti cek apa sudah mode spreadcycle
-	if(!PWM_Pulse_Complete) return;
-	if(!isBrake){
-		iholdIrun.ihold = 0;
-		pwmConfig.freewheel = TMC_FREEWHEEL_BRAKE;
-		TMC2209_HAL_Write(TMC2209Reg_IHOLD_IRUN, iholdIrun.bytes);
-		TMC2209_HAL_Write(TMC2209Reg_PWMCONF, pwmConfig.bytes);
-
-		isBrake = TRUE;
-	}
-}
-void TMC2209_unBrake(){
-	if(isBrake){
-		iholdIrun.ihold = 16;
-		pwmConfig.freewheel = TMC_FREEWHEEL_NORMAL;
-		TMC2209_HAL_Write(TMC2209Reg_IHOLD_IRUN, iholdIrun.bytes);
-		TMC2209_HAL_Write(TMC2209Reg_PWMCONF, pwmConfig.bytes);
-
-		isBrake = FALSE;
-	}
-}
 void TMC2209_direction(uint8_t direction){
 	if(direction == rotation_dir) return;
 
@@ -217,7 +193,12 @@ void PID_controller(int32_t* setpoint, int32_t *current, float* result){
 		pid_last_error = pid_error;
 		pid_last_time = time_now;
 
-		*result = fmaxf(0.0f, fminf(1.0f, fabs(pid_output / PID_MAX)));
+//		*result = fmaxf(0.0f, fminf(1.0f, fabs(pid_output / PID_MAX)));
+		if(fabs(pid_output) > MAX_SPEED){
+			*result = MAX_SPEED;
+		}else{
+			*result = fabs(pid_output);
+		}
 	}
 }
 void TMC2209_watchPosition(int32_t* target, int32_t* counter, float* speed){
@@ -246,7 +227,8 @@ void TMC2209_watchPosition(int32_t* target, int32_t* counter, float* speed){
 		}
 	}
 
-	*speed = pid_fraction * MAX_SPEED;
+//	*speed = pid_fraction * MAX_SPEED;
+	*speed = pid_fraction;
 	TMC2209_velocity(*speed);
 }
 
@@ -275,6 +257,18 @@ void TMC2209_moveOneStep(){
 	HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
 
 }
+
+void TMC2209_safetyWatch(){
+	TMC2209_drv_status_reg_t buffer = 0;
+	TMC2209_HAL_Read(TMC2209Reg_DRV_STATUS, &buffer);
+
+	if(buffer.ot || buffer.s2ga || buffer.s2gb || buffer.s2vsa || buffer.s2vsb){
+		TMC2209_stop();
+		TMC2209_disable();
+		emmitSysError(WATCHER_DRV_FAULT);
+	}
+}
+
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM2) {

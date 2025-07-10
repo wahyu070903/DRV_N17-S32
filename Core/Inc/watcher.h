@@ -17,11 +17,27 @@ typedef enum {
 } WATCHER_STAT;
 
 typedef enum {
-	WATCHER_DRV_FAULT = 0x00,
-	WATCHER_ENC_FAULT = 0x01,
-	WATCHER_IMU_FAULT = 0x02,
-	WATCHER_CAN_FAULT = 0x03,
+	WATCHER_STAT_NORM = 0x00,
+	WATCHER_DRV_FAULT = 0x01,
+	WATCHER_ENC_FAULT = 0x02,
+	WATCHER_IMU_FAULT = 0x03,
+	WATCHER_CAN_FAULT = 0x04,
 } WATCHER_ERR_STAT;
+
+typedef enum {
+	WATCHER_DRV_NORM 		= 0x00,
+	WATCHER_DRV_OVERTEMP 	= 0x01,
+	WATCHER_DRV_SHORT2GND 	= 0x02,
+	WATCHER_DRV_LMOSSHORT 	= 0x03,
+	WATCHER_DRV_INITFAIL	= 0x04,
+} WATCHER_DRV_STAT;
+
+typedef enum {
+	WATCHER_ENC_NORM 		= 0x00,
+	WATCHER_ENC_INITFAIL	= 0x01,
+	WATCHER_ENC_DISCONNECT 	= 0x02,
+
+} WATHER_ENC_STAT;
 
 typedef struct{
 	WATCHER_STAT stat;
@@ -29,6 +45,7 @@ typedef struct{
 } WATCHER_t;
 
 uint8_t getSysStatus();
+uint8_t getSysError();
 void emmitSysError(WATCHER_ERR_STAT);
 void resetSysError();
 void displaySysStat();

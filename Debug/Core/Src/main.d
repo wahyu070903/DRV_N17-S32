@@ -46,8 +46,6 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Src/../../MotorDriver/Inc/TMC2209_HAL.h ../Core/Inc/watcher.h \
  ../Core/Src/../../Encoder/Inc/Encoder.h \
  ../Core/Src/../../Encoder/Inc/AS5600.h \
- ../Core/Src/../../ImuSensor/Inc/ImuSensor.h \
- ../Core/Src/../../ImuSensor/Inc/mpu6050.h \
  ../Core/Src/../../Encoder/Inc/encoder_calib.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
@@ -99,6 +97,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/watcher.h:
 ../Core/Src/../../Encoder/Inc/Encoder.h:
 ../Core/Src/../../Encoder/Inc/AS5600.h:
-../Core/Src/../../ImuSensor/Inc/ImuSensor.h:
-../Core/Src/../../ImuSensor/Inc/mpu6050.h:
 ../Core/Src/../../Encoder/Inc/encoder_calib.h:
