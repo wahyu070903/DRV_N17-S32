@@ -448,7 +448,10 @@ static void MX_GPIO_Init(void)
 void StartDriverTask(void const * argument){
 	for(;;){
 		if(cycleErr) return;
+<<<<<<< HEAD
 		TMC2209_safetyWatch();
+=======
+>>>>>>> 321b46033661d9094a12f1a5fb1a598f8ba48588
 		TMC2209_enable();
 		TMC2209_watchPosition(&motor_target, &encoder_counter, &motor_speed);
 	}
@@ -456,8 +459,13 @@ void StartDriverTask(void const * argument){
 
 void StartEncoderTask(void const * argument){
 	for(;;){
+		uint8_t data[] = "Hello world\n";
 		if(!encoderReady_f) return;
 		encoder_counter = EncoderEnablePool();
+<<<<<<< HEAD
+=======
+		HAL_UART_Transmit(&huart3, data, 12, 1000);
+>>>>>>> 321b46033661d9094a12f1a5fb1a598f8ba48588
 	}
 }
 
