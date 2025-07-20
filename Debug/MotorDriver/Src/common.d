@@ -1,5 +1,5 @@
-Encoder/Src/encoder_calib.o: ../Encoder/Src/encoder_calib.c \
- ../Encoder/Src/../Inc/encoder_calib.h \
+MotorDriver/Src/common.o: ../MotorDriver/Src/common.c \
+ ../MotorDriver/Src/../Inc/common.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h \
  ../Core/Inc/stm32f1xx_hal_conf.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h \
@@ -25,12 +25,8 @@ Encoder/Src/encoder_calib.o: ../Encoder/Src/encoder_calib.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
- ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
- ../Encoder/Src/../Inc/Encoder.h ../Encoder/Src/../Inc/AS5600.h \
- ../Core/Inc/watcher.h \
- ../Encoder/Src/../Inc/../../MotorDriver/Inc/tmc2209.h \
- ../Encoder/Src/../Inc/../../MotorDriver/Inc/common.h
-../Encoder/Src/../Inc/encoder_calib.h:
+ ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
+../MotorDriver/Src/../Inc/common.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h:
@@ -57,8 +53,3 @@ Encoder/Src/encoder_calib.o: ../Encoder/Src/encoder_calib.c \
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h:
-../Encoder/Src/../Inc/Encoder.h:
-../Encoder/Src/../Inc/AS5600.h:
-../Core/Inc/watcher.h:
-../Encoder/Src/../Inc/../../MotorDriver/Inc/tmc2209.h:
-../Encoder/Src/../Inc/../../MotorDriver/Inc/common.h:

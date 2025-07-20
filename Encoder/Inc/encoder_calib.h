@@ -10,8 +10,8 @@
 
 #include "stm32f1xx_hal.h"
 #include "Encoder.h"
-#include "../../MotorDriver/Inc/TMC2209.h"
 #include "watcher.h"
+#include "../../MotorDriver/Inc/tmc2209.h"
 
 
 void encoderCalibRun();

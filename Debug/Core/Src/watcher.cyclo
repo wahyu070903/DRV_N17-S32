@@ -1,4 +1,5 @@
-../Core/Src/watcher.c:12:6:emmitSysError	1
-../Core/Src/watcher.c:17:9:getSysStatus	1
-../Core/Src/watcher.c:21:9:getSysError	1
-../Core/Src/watcher.c:24:6:displaySysStat	2
+../Core/Src/watcher.c:15:6:initWatcherStack	2
+../Core/Src/watcher.c:25:6:pushError	4
+../Core/Src/watcher.c:36:6:removeError	4
+../Core/Src/watcher.c:47:6:isErrorExist	2
+../Core/Src/watcher.c:52:6:displaySysStat	2

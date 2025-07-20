@@ -1,0 +1,13 @@
+../MotorDriver/Src/motion.c:24:6:PID_Init	1
+../MotorDriver/Src/motion.c:34:6:PID_Run	1
+../MotorDriver/Src/motion.c:38:6:PID_Stop	1
+../MotorDriver/Src/motion.c:42:7:PID_Compute	6
+../MotorDriver/Src/motion.c:74:6:Motion_Init	1
+../MotorDriver/Src/motion.c:79:6:Motion_Move	2
+../MotorDriver/Src/motion.c:87:6:Motion_Stop	2
+../MotorDriver/Src/motion.c:94:6:Motion_Direction	4
+../MotorDriver/Src/motion.c:107:6:Motion_SetMicrostep	1
+../MotorDriver/Src/motion.c:112:6:Motion_Velocity	5
+../MotorDriver/Src/motion.c:141:7:_scale	1
+../MotorDriver/Src/motion.c:145:6:Motion_Runtime	4
+../MotorDriver/Src/motion.c:179:6:HAL_TIM_PWM_PulseFinishedCallback	3

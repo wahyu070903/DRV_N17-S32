@@ -23,10 +23,10 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "i2c_bus.h"
-#include "../../MotorDriver/Inc/TMC2209.h"
 #include "../../Encoder/Inc/Encoder.h"
 #include "watcher.h"
 #include "../../Encoder/Inc/encoder_calib.h"
+#include "../../MotorDriver/Inc/motion.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +48,7 @@
 I2C_HandleTypeDef hi2c1;
 
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
@@ -66,6 +67,7 @@ static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_TIM3_Init(void);
 void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
@@ -81,7 +83,7 @@ void suspendTaskEcpectSelf(void);
 /* USER CODE BEGIN 0 */
 //private variable
 int32_t encoder_counter = 0;
-uint8_t motor_rotation = TMC2209_ROT_FWD;		//0 = CCW, 1 = CW
+float pid_computed = 0;
 float motor_speed = 40.0;	//Rps
 int32_t motor_target = 0;
 float pid_data = 0.0;
@@ -134,20 +136,16 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   i2c_bus_recover(&hi2c1);
   i2c_reset(&hi2c1);
   HAL_I2C_Init(&hi2c1);
 
-  TMC2209_setup();
-  HAL_StatusTypeDef encoderStatus =  EncoderInit();
-  if(encoderStatus == HAL_OK) encoderReady_f = TRUE;
-//  IMU_Init();
-  TMC2209_setMicrostep(TMC2209_Microsteps_1);
+  initWatcherStack();
+  Motion_Init();
+  EncoderInit();
 
-  if(encoderReady_f){
-//	  encoderCalibRun();
-  }
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -322,6 +320,51 @@ static void MX_TIM2_Init(void)
 }
 
 /**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 72 - 1;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 1000 - 1;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -447,36 +490,23 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void StartDriverTask(void const * argument){
 	for(;;){
-		if(cycleErr) return;
-<<<<<<< HEAD
-		TMC2209_safetyWatch();
-=======
->>>>>>> 321b46033661d9094a12f1a5fb1a598f8ba48588
-		TMC2209_enable();
-		TMC2209_watchPosition(&motor_target, &encoder_counter, &motor_speed);
+		Motion_Runtime();
 	}
 }
 
+
 void StartEncoderTask(void const * argument){
 	for(;;){
-		uint8_t data[] = "Hello world\n";
-		if(!encoderReady_f) return;
 		encoder_counter = EncoderEnablePool();
-<<<<<<< HEAD
-=======
-		HAL_UART_Transmit(&huart3, data, 12, 1000);
->>>>>>> 321b46033661d9094a12f1a5fb1a598f8ba48588
 	}
 }
 
 void StartWatcherTask(void const * argument){
 	for(;;){
-		if(getSysStatus() == WATCHER_ERROR && cycleErr == FALSE){
-			cycleErr = TRUE;
-			error_codes = getSysError();
+		displaySysStat();
+		if(isErrorExist()){
 			suspendTaskEcpectSelf();
 		}
-		displaySysStat();
 	}
 }
 
@@ -521,7 +551,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-
+  if (htim->Instance == TIM3) {
+	  pid_computed = PID_Compute(&motor_target, &encoder_counter);
+  }
   /* USER CODE END Callback 1 */
 }
 
@@ -536,6 +568,7 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+
   }
   /* USER CODE END Error_Handler_Debug */
 }

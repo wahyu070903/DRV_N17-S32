@@ -1,0 +1,9 @@
+../MotorDriver/Src/common.c:7:6:tmc_microsteps_validate	4
+../MotorDriver/Src/common.c:20:9:tmc_microsteps_to_mres	3
+../MotorDriver/Src/common.c:34:10:tmc_calc_tstep	2
+../MotorDriver/Src/common.c:41:7:tmc_calc_tstep_inv	2
+../MotorDriver/Src/common.c:46:6:tmc_motors_set	1
+../MotorDriver/Src/common.c:51:9:tmc_motors_get	1
+../MotorDriver/Src/common.c:56:6:tmc_crc8	4
+../MotorDriver/Src/common.c:74:6:tmc_uart_write	1
+../MotorDriver/Src/common.c:80:28:tmc_uart_read	5

@@ -26,13 +26,13 @@ HAL_StatusTypeDef EncoderInit(){
 	Encoder.DirPin = GPIO_PIN_5;
 
 	if(HAL_I2C_IsDeviceReady(Encoder.i2cHandle, Encoder.i2cAddr, 1, 100) != HAL_OK){
-		emmitSysError(WATCHER_ENC_FAULT);
+//		pushError(&watcherStack, WATCHER_ERR_ENC_LINE);
 		return HAL_ERROR;
 	}
 	AS5600Init_StatusTypedef status = AS5600_Init(&Encoder);
 	if(status == AS5600_INIT_OK) init_success = TRUE;
 	else{
-		emmitSysError(WATCHER_ENC_FAULT);
+//		pushError(&watcherStack, WATCHER_ERR_ENC_INIT);
 		return HAL_ERROR;
 	}
 
@@ -61,7 +61,7 @@ void EncoderGetAngle(uint16_t* res){
 int32_t EncoderEnablePool(){
 	HAL_StatusTypeDef status = AS5600_GetRawAngle(&Encoder, &raw_buffer);
 	if(status != HAL_OK){
-		emmitSysError(WATCHER_ENC_FAULT);
+//		pushError(&watcherStack, WATCHER_ERR_ENC_DISCONNECT);
 		return 0;
 	}
 	active_quadrant = -1;

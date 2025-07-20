@@ -1,5 +1,5 @@
-MotorDriver/Src/TMC2209.o: ../MotorDriver/Src/TMC2209.c \
- ../MotorDriver/Src/../Inc/TMC2209.h \
+MotorDriver/Src/tmc2209.o: ../MotorDriver/Src/tmc2209.c \
+ ../MotorDriver/Src/../Inc/tmc2209.h ../MotorDriver/Src/../Inc/common.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h \
  ../Core/Inc/stm32f1xx_hal_conf.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h \
@@ -25,9 +25,9 @@ MotorDriver/Src/TMC2209.o: ../MotorDriver/Src/TMC2209.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
- ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
- ../MotorDriver/Src/../Inc/TMC2209_HAL.h ../Core/Inc/watcher.h
-../MotorDriver/Src/../Inc/TMC2209.h:
+ ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
+../MotorDriver/Src/../Inc/tmc2209.h:
+../MotorDriver/Src/../Inc/common.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h:
@@ -54,5 +54,3 @@ MotorDriver/Src/TMC2209.o: ../MotorDriver/Src/TMC2209.c \
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h:
-../MotorDriver/Src/../Inc/TMC2209_HAL.h:
-../Core/Inc/watcher.h:

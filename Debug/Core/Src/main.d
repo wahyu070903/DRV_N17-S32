@@ -42,11 +42,13 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
- ../Core/Inc/i2c_bus.h ../Core/Src/../../MotorDriver/Inc/TMC2209.h \
- ../Core/Src/../../MotorDriver/Inc/TMC2209_HAL.h ../Core/Inc/watcher.h \
- ../Core/Src/../../Encoder/Inc/Encoder.h \
- ../Core/Src/../../Encoder/Inc/AS5600.h \
- ../Core/Src/../../Encoder/Inc/encoder_calib.h
+ ../Core/Inc/i2c_bus.h ../Core/Src/../../Encoder/Inc/Encoder.h \
+ ../Core/Src/../../Encoder/Inc/AS5600.h ../Core/Inc/watcher.h \
+ ../Core/Src/../../Encoder/Inc/encoder_calib.h \
+ ../Core/Src/../../Encoder/Inc/../../MotorDriver/Inc/tmc2209.h \
+ ../Core/Src/../../Encoder/Inc/../../MotorDriver/Inc/common.h \
+ ../Core/Src/../../MotorDriver/Inc/motion.h \
+ ../Core/Src/../../MotorDriver/Inc/tmc2209.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
@@ -92,9 +94,11 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h:
 ../Core/Inc/i2c_bus.h:
-../Core/Src/../../MotorDriver/Inc/TMC2209.h:
-../Core/Src/../../MotorDriver/Inc/TMC2209_HAL.h:
-../Core/Inc/watcher.h:
 ../Core/Src/../../Encoder/Inc/Encoder.h:
 ../Core/Src/../../Encoder/Inc/AS5600.h:
+../Core/Inc/watcher.h:
 ../Core/Src/../../Encoder/Inc/encoder_calib.h:
+../Core/Src/../../Encoder/Inc/../../MotorDriver/Inc/tmc2209.h:
+../Core/Src/../../Encoder/Inc/../../MotorDriver/Inc/common.h:
+../Core/Src/../../MotorDriver/Inc/motion.h:
+../Core/Src/../../MotorDriver/Inc/tmc2209.h:

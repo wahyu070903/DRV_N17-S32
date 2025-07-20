@@ -5,16 +5,19 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../MotorDriver/Src/TMC2209.c \
-../MotorDriver/Src/TMC2209_HAL.c 
+../MotorDriver/Src/common.c \
+../MotorDriver/Src/motion.c \
+../MotorDriver/Src/tmc2209.c 
 
 OBJS += \
-./MotorDriver/Src/TMC2209.o \
-./MotorDriver/Src/TMC2209_HAL.o 
+./MotorDriver/Src/common.o \
+./MotorDriver/Src/motion.o \
+./MotorDriver/Src/tmc2209.o 
 
 C_DEPS += \
-./MotorDriver/Src/TMC2209.d \
-./MotorDriver/Src/TMC2209_HAL.d 
+./MotorDriver/Src/common.d \
+./MotorDriver/Src/motion.d \
+./MotorDriver/Src/tmc2209.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -24,7 +27,7 @@ MotorDriver/Src/%.o MotorDriver/Src/%.su MotorDriver/Src/%.cyclo: ../MotorDriver
 clean: clean-MotorDriver-2f-Src
 
 clean-MotorDriver-2f-Src:
-	-$(RM) ./MotorDriver/Src/TMC2209.cyclo ./MotorDriver/Src/TMC2209.d ./MotorDriver/Src/TMC2209.o ./MotorDriver/Src/TMC2209.su ./MotorDriver/Src/TMC2209_HAL.cyclo ./MotorDriver/Src/TMC2209_HAL.d ./MotorDriver/Src/TMC2209_HAL.o ./MotorDriver/Src/TMC2209_HAL.su
+	-$(RM) ./MotorDriver/Src/common.cyclo ./MotorDriver/Src/common.d ./MotorDriver/Src/common.o ./MotorDriver/Src/common.su ./MotorDriver/Src/motion.cyclo ./MotorDriver/Src/motion.d ./MotorDriver/Src/motion.o ./MotorDriver/Src/motion.su ./MotorDriver/Src/tmc2209.cyclo ./MotorDriver/Src/tmc2209.d ./MotorDriver/Src/tmc2209.o ./MotorDriver/Src/tmc2209.su
 
 .PHONY: clean-MotorDriver-2f-Src
 

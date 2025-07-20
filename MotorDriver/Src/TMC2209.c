@@ -1,284 +1,317 @@
-/*
- * TMC2209.c
- *
- *  Created on: Feb 19, 2025
- *      Author: Orsted
- */
-#include "../Inc/TMC2209.h"
 #include <math.h>
-#include <stdlib.h>
+#include <string.h>
 
-TMC2209_Setup globalSetup;
-extern TIM_HandleTypeDef htim2;
-TMC2209_chopConfig chopConfig;
-TMC2209_gconf_reg_t gconfConfig;
-TMC2209_slaveconf_reg_t slaveConfig;
+#include "../Inc/tmc2209.h"
 
-static uint8_t toff_ = TOFF_DEFAULT;
-static uint8_t PWM_Pulse_Complete = TRUE;
-static uint8_t Driver_Enable = FALSE;
-static uint8_t active_microstep;
-static float vel_now = 0.0;
-static uint8_t rotation_dir;
-static uint32_t stepCounter = 0;
-static float pid_error = 0;
-static float pid_last_error = 0;
-static float pid_integral = 0;
-static float pid_direvative = 0;
-static float pid_output = 0;
-static float pid_fraction = 0;
-static uint32_t pid_last_time = 0;
+static const trinamic_cfg_params_t cfg_params = {
 
-static uint8_t oneStepMove_finish = FALSE;
-static uint8_t oneStepMove_start = FALSE;
+    .vsense[0] = 325.0f,
+    .vsense[1] = 180.0f,
 
-static uint8_t isBrake = FALSE;
+    .cap.drvconf = 0,
 
-void TMC2209_setdefault()
+    .cap.coolconf.seup = 0b11,
+    .cap.coolconf.sedn = 0b11,
+    .cap.coolconf.semax = 0b1111,
+    .cap.coolconf.semin = 0b1111,
+    .cap.coolconf.seimin = 1,
+
+    .cap.chopconf.toff = 0b1111,
+    .cap.chopconf.hstrt = 0b111,
+    .cap.chopconf.hend = 0b1111,
+    .cap.chopconf.rndtf = 1,
+    .cap.chopconf.intpol = 1,
+    .cap.chopconf.tbl = 0b11,
+
+    .dflt.drvconf = 0,
+
+    .dflt.coolconf.seup = TMC2209_SEUP,
+    .dflt.coolconf.sedn = TMC2209_SEDN,
+    .dflt.coolconf.semax = TMC2209_SEMAX,
+    .dflt.coolconf.semin = TMC2209_SEMIN,
+    .dflt.coolconf.seimin = TMC2209_SEIMIN,
+
+    .dflt.chopconf.toff = TMC2209_TOFF,
+    .dflt.chopconf.hstrt = TMC2209_HSTRT - 1,
+    .dflt.chopconf.hend = TMC2209_HEND + 3,
+    .dflt.chopconf.intpol = TMC2209_INTPOL,
+    .dflt.chopconf.tbl = TMC2209_TBL
+};
+
+static const TMC2209_t tmc2209_defaults = {
+    .config.f_clk = TMC2209_F_CLK,
+    .config.mode = TMC2209_MODE,
+    .config.r_sense = TMC2209_R_SENSE,
+    .config.current = TMC2209_CURRENT,
+    .config.hold_current_pct = TMC2209_HOLD_CURRENT_PCT,
+    .config.microsteps = TMC2209_MICROSTEPS,
+
+    // register adresses
+    .gconf.addr.reg = TMC2209Reg_GCONF,
+    .gconf.reg.en_spreadcycle = TMC2209_SPREADCYCLE,
+    .gstat.addr.reg = TMC2209Reg_GSTAT,
+    .ifcnt.addr.reg = TMC2209Reg_IFCNT,
+    .slaveconf.addr.reg = TMC2209Reg_SLAVECONF,
+    .otp_prog.addr.reg = TMC2209Reg_OTP_PROG,
+    .otp_read.addr.reg = TMC2209Reg_OTP_READ,
+    .ioin.addr.reg = TMC2209Reg_IOIN,
+    .factory_conf.addr.reg = TMC2209Reg_FACTORY_CONF,
+    .ihold_irun.addr.reg = TMC2209Reg_IHOLD_IRUN,
+    .ihold_irun.reg.iholddelay = TMC2209_IHOLDDELAY,
+    .tpowerdown.addr.reg = TMC2209Reg_TPOWERDOWN,
+    .tpowerdown.reg.tpowerdown = TMC2209_TPOWERDOWN,
+    .tstep.addr.reg = TMC2209Reg_TSTEP,
+    .tpwmthrs.addr.reg = TMC2209Reg_TPWMTHRS,
+    .vactual.addr.reg = TMC2209Reg_VACTUAL,
+    .tcoolthrs.addr.reg = TMC2209Reg_TCOOLTHRS,
+    .tcoolthrs.reg.tcoolthrs = TMC2209_COOLSTEP_THRS,
+    .sgthrs.addr.reg = TMC2209Reg_SGTHRS,
+    .sg_result.addr.reg = TMC2209Reg_SG_RESULT,
+    .coolconf.addr.reg = TMC2209Reg_COOLCONF,
+    .coolconf.reg.semin = TMC2209_SEMIN,
+    .coolconf.reg.seup = TMC2209_SEUP,
+    .coolconf.reg.semax = TMC2209_SEMAX,
+    .coolconf.reg.sedn = TMC2209_SEDN,
+    .coolconf.reg.seimin = TMC2209_SEIMIN,
+    .mscnt.addr.reg = TMC2209Reg_MSCNT,
+    .mscuract.addr.reg = TMC2209Reg_MSCURACT,
+    .chopconf.addr.reg = TMC2209Reg_CHOPCONF,
+    .chopconf.reg.tbl = TMC2209_TBL,
+    .chopconf.reg.toff = TMC2209_TOFF,          // 0 = driver disable, 1 - with TBL >= 2 only, 2...15
+    .chopconf.reg.hstrt = TMC2209_HSTRT - 1,    // 0...7 -> 1...8
+    .chopconf.reg.hend = TMC2209_HEND + 3,      // 0...15 -> -3...12
+    .chopconf.reg.intpol = TMC2209_INTPOL,
+    .drv_status.addr.reg = TMC2209Reg_DRV_STATUS,
+    .pwmconf.addr.reg = TMC2209Reg_PWMCONF,
+    .pwmconf.reg.pwm_lim = TMC2209_PWM_LIM,
+    .pwmconf.reg.pwm_reg = TMC2209_PWM_REG,
+    .pwmconf.reg.pwm_autograd = TMC2209_PWM_AUTOGRAD,
+    .pwmconf.reg.pwm_freq = TMC2209_PWM_FREQ,
+    .pwmconf.reg.pwm_grad = TMC2209_PWM_GRAD,
+    .pwmconf.reg.pwm_ofs = TMC2209_PWM_OFS,
+    .pwmconf.reg.pwm_autoscale = TMC2209_PWM_AUTOSCALE,
+    .pwm_scale.addr.reg = TMC2209Reg_PWM_SCALE,
+    .pwm_auto.addr.reg = TMC2209Reg_PWM_AUTO
+};
+
+static void _set_rms_current (TMC2209_t *driver)
 {
-	gconfConfig.I_scale_analog = TRUE;
-	gconfConfig.internal_Rsense = FALSE;
-	gconfConfig.shaft = FALSE;
-	gconfConfig.pdn_disable = TRUE;
-	gconfConfig.mstep_reg_select = TRUE;
-	gconfConfig.multistep_filt = TRUE;
-	gconfConfig.bytes = FALSE;
-	gconfConfig.I_scale_analog = TRUE;
-	gconfConfig.multistep_filt = TRUE;
+    float maxv = (((float)(driver->config.r_sense + 20)) * (float)(32UL * driver->config.current)) * 1.41421f / 1000.0f;
 
-	chopConfig.bytes = CHOPPER_CONFIG_DEFAULT;
+    int8_t current_scaling = (int8_t)(maxv / cfg_params.vsense[0]) - 1;
+
+    // If the current scaling is too low set the vsense bit and recalculate the current setting
+    if ((driver->chopconf.reg.vsense = (current_scaling < 16)))
+        current_scaling = (uint8_t)(maxv / cfg_params.vsense[1]) - 1;
+
+    driver->ihold_irun.reg.irun = current_scaling > 31 ? 31 : current_scaling;
+    driver->ihold_irun.reg.ihold = (driver->ihold_irun.reg.irun * driver->config.hold_current_pct) / 100;
+
+//?    driver->coolconf.reg.seimin = driver->ihold_irun.reg.irun >= 20;
 }
 
-void TMC2209_setup()
+const trinamic_cfg_params_t *TMC2209_GetConfigDefaults (void)
 {
-	TMC2209_setdefault();
-	slaveConfig.conf = 0x00;
-
-	uint8_t timeout_cnt = 0;
-	TMC2209_gconf_reg_t gconf_verif;
-	while(timeout_cnt < TMC_SETUP_TIMEOUT){
-		TMC2209_HAL_Write(TMC2209Reg_GCONF, gconfConfig.bytes);
-		TMC2209_HAL_Write(TMC2209Reg_SLAVECONF, slaveConfig.bytes);
-
-		TMC2209_HAL_Read(TMC2209Reg_GCONF, &gconf_verif.bytes);
-		if(gconf_verif.bytes == gconfConfig.bytes) break;
-		else{
-			HAL_Delay(100);
-		}
-		timeout_cnt++;
-	}
-	if(timeout_cnt >= TMC_SETUP_TIMEOUT){
-		WATCHER_ERR_STAT err = WATCHER_DRV_FAULT;
-		emmitSysError(err);
-	}
-
-	TMC2209_disable();
-	HAL_Delay(100);
+    return &cfg_params;
 }
 
-void TMC2209_enable()
+void TMC2209_SetDefaults (TMC2209_t *driver)
 {
-	if(Driver_Enable == FALSE){
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
-		Driver_Enable = TRUE;
-		chopConfig.toff = toff_;
-		TMC2209_HAL_Write(TMC2209Reg_CHOPCONF, chopConfig.bytes);
-	}
+    memcpy(driver, &tmc2209_defaults, sizeof(TMC2209_t));
+
+    _set_rms_current(driver);
+
+    driver->chopconf.reg.mres = tmc_microsteps_to_mres(driver->config.microsteps);
 }
 
-void TMC2209_disable()
+bool TMC2209_Init (TMC2209_t *driver)
 {
-	if(Driver_Enable == TRUE){
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
-		Driver_Enable = FALSE;
-		chopConfig.toff = TOFF_DISABLE;
-		TMC2209_HAL_Write(TMC2209Reg_CHOPCONF, chopConfig.bytes);
-	}
+    // Perform a status register read/write to clear status flags.
+    // If no or bad response from driver return with error.
+    if(!TMC2209_ReadRegister(driver, (TMC2209_datagram_t *)&driver->gstat))
+        return false;
+
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->gstat);
+
+    TMC2209_ReadRegister(driver, (TMC2209_datagram_t *)&driver->gconf);
+    driver->gconf.reg.pdn_disable = 1;
+    driver->gconf.reg.mstep_reg_select = 1;
+    driver->gconf.reg.I_scale_analog = 0;
+
+// Use default settings (from OTP) for these:
+//  driver->gconf.reg.internal_Rsense = 0;
+//  driver->gconf.reg.en_spreadcycle = 0;
+//  driver->gconf.reg.multistep_filt = 1;
+
+    TMC2209_ReadRegister(driver, (TMC2209_datagram_t *)&driver->ifcnt);
+
+    uint8_t ifcnt = driver->ifcnt.reg.count;
+
+    driver->chopconf.reg.mres = tmc_microsteps_to_mres(driver->config.microsteps);
+
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->gconf);
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->tpowerdown);
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->pwmconf);
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->tpwmthrs);
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->tcoolthrs);
+    TMC2209_SetCurrent(driver, driver->config.current, driver->config.hold_current_pct);
+
+    TMC2209_ReadRegister(driver, (TMC2209_datagram_t *)&driver->ifcnt);
+
+    return (((uint8_t)driver->ifcnt.reg.count - ifcnt) & 0xFF) == 7;
 }
 
-void TMC2209_setMicrostep(TMC2209_Microstep Microstep)
+uint16_t TMC2209_GetCurrent (TMC2209_t *driver, trinamic_current_t type)
 {
-	chopConfig.mres = Microstep;
-	TMC2209_HAL_Write(TMC2209Reg_CHOPCONF, chopConfig.bytes);
-	active_microstep = pow(2, abs(Microstep - TMC2209_Microsteps_1));
+    uint8_t cs;
+    bool vsense;
+
+    switch(type) {
+        case TMCCurrent_Max:
+            cs = 31;
+            vsense = 0;
+            break;
+        case TMCCurrent_Actual:
+            cs = driver->ihold_irun.reg.irun;
+            vsense = driver->chopconf.reg.vsense;
+            break;
+        case TMCCurrent_Hold:
+            cs = driver->ihold_irun.reg.ihold;
+            vsense = driver->chopconf.reg.vsense;
+            break;
+        default: // TMCCurrent_Min:
+            cs = 0;
+            vsense = 1;
+            break;
+    }
+
+    return (uint16_t)ceilf((float)(cs + 1) / 32.0f * cfg_params.vsense[vsense] / (float)(driver->config.r_sense + 20) / 1.41421f * 1000.0f);
 }
-void TMC2209_readChopConfig(uint32_t* result)
+
+// r_sense = mOhm, Vsense = mV, current = mA (RMS)
+void TMC2209_SetCurrent (TMC2209_t *driver, uint16_t mA, uint8_t hold_pct)
 {
-	uint32_t buffer = 0;
-	TMC2209_HAL_Read(TMC2209Reg_CHOPCONF, &buffer);
-	*result = buffer;
+    driver->config.current = mA;
+    driver->config.hold_current_pct = hold_pct;
+
+    _set_rms_current(driver);
+
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->chopconf);
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->ihold_irun);
 }
 
-void TMC2209_velocity(float velocity)
+float TMC2209_GetTPWMTHRS (TMC2209_t *driver, float steps_mm)
 {
-	float frequency = 0.0f;
-	uint16_t desired_period = 0;
-	uint16_t prescaller = TMC2209_DEFAULT_PRESCALLER;
-
-	if(vel_now == velocity) return;
-	if(velocity < 0.01f) velocity = 0.01f;
-	if(velocity <= 0) {
-		HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
-		PWM_Pulse_Complete = TRUE;
-		return;
-	}
-
-	while(TRUE){
-		frequency  = (velocity * (STEP_PER_REV * active_microstep)) / 60;
-		if(((TMC2209_BASE_FREQ / prescaller) / frequency) > MAX_CNT_PERIOD){
-			prescaller += TMC2209_DEFAULT_PRESCALLER;
-			continue;
-		}
-		desired_period = (uint16_t)round((TMC2209_BASE_FREQ / prescaller) / frequency);
-		break;
-	}
-
-	__HAL_TIM_SET_PRESCALER(&htim2, prescaller);
-	__HAL_TIM_SET_AUTORELOAD(&htim2, desired_period);
-	vel_now = velocity;
+    return tmc_calc_tstep_inv(&driver->config, driver->tpwmthrs.reg.tpwmthrs, steps_mm);
 }
 
-void TMC2209_move(){
-	if(isBrake) return;
-	if(PWM_Pulse_Complete == TRUE){
-		HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
-		PWM_Pulse_Complete = FALSE;
-	}
-}
-
-void TMC2209_stop(){
-	if(PWM_Pulse_Complete == FALSE){
-		HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
-		PWM_Pulse_Complete = TRUE;
-	}
-}
-void TMC2209_direction(uint8_t direction){
-	if(direction == rotation_dir) return;
-
-	if(direction == TMC2209_ROT_FWD){
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-		rotation_dir = TMC2209_ROT_FWD;
-	}
-	if(direction == TMC2209_ROT_REV){
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-		rotation_dir = TMC2209_ROT_REV;
-	}
-}
-
-void PID_controller(int32_t* setpoint, int32_t *current, float* result){
-	uint32_t time_now = HAL_GetTick();
-	if(time_now - pid_last_time >= PID_SAMPLING){
-		float delta_time = (float)(time_now - pid_last_time) / 1000.0f;
-		pid_error = (float)(*setpoint - *current);
-
-		if(fabs(pid_error) < PID_DEADBAND){
-			*result = 0;
-			pid_last_time = time_now;
-			return;
-		}
-
-		if(fabs(pid_error) > PID_INTEGRAL_TRESHOLD){
-			pid_integral += pid_error * delta_time;
-			if(pid_integral > PID_INTEGRAL_MAX) pid_integral = PID_INTEGRAL_MAX;
-			if(pid_integral < PID_INTEGRAL_MIN) pid_integral = PID_INTEGRAL_MIN;
-		}else{
-			pid_integral *= 0.9f;
-		}
-
-		float direvative = (pid_error - pid_last_error) / delta_time;
-		pid_direvative = (pid_direvative * 0.9f) + (direvative * 0.1f);
-
-		pid_output = (PID_KP * pid_error) + (PID_KI * pid_integral) + (PID_KD * pid_direvative);
-
-		pid_last_error = pid_error;
-		pid_last_time = time_now;
-
-//		*result = fmaxf(0.0f, fminf(1.0f, fabs(pid_output / PID_MAX)));
-		if(fabs(pid_output) > MAX_SPEED){
-			*result = MAX_SPEED;
-		}else{
-			*result = fabs(pid_output);
-		}
-	}
-}
-void TMC2209_watchPosition(int32_t* target, int32_t* counter, float* speed){
-
-	PID_controller(target, counter, &pid_fraction);
-
-	int32_t error = *target - *counter;
-	if(error == 0){
-		TMC2209_stop();
-		*speed = 0;
-		return;
-	}else{
-		TMC2209_move();
-	}
-
-	if(*counter > *target) TMC2209_direction(TMC2209_ROT_FWD);
-	if(*counter < *target) TMC2209_direction(TMC2209_ROT_REV);
-
-	if(abs(*target - *counter) > 100){
-		if(active_microstep != TMC2209_Microsteps_1){
-			TMC2209_setMicrostep(TMC2209_Microsteps_1);
-		}
-	}else{
-		if(active_microstep != TMC2209_Microsteps_64){
-			TMC2209_setMicrostep(TMC2209_Microsteps_64);
-		}
-	}
-
-//	*speed = pid_fraction * MAX_SPEED;
-	*speed = pid_fraction;
-	TMC2209_velocity(*speed);
-}
-
-void TMC2209_getDirection(uint8_t* result){
-	*result = rotation_dir;
-}
-
-void TMC2209_rotateOnce(){
-	uint32_t target = STEP_PER_REV * active_microstep;
-	HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
-	while(TRUE){
-		if(stepCounter >= target){
-			HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
-			stepCounter = 0;
-			break;
-		}
-	}
-}
-
-void TMC2209_moveOneStep(){
-	oneStepMove_finish = FALSE;
-	HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
-	oneStepMove_start = TRUE;
-	while(!oneStepMove_finish);
-
-	HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
-
-}
-
-void TMC2209_safetyWatch(){
-	TMC2209_drv_status_reg_t buffer = 0;
-	TMC2209_HAL_Read(TMC2209Reg_DRV_STATUS, &buffer);
-
-	if(buffer.ot || buffer.s2ga || buffer.s2gb || buffer.s2vsa || buffer.s2vsb){
-		TMC2209_stop();
-		TMC2209_disable();
-		emmitSysError(WATCHER_DRV_FAULT);
-	}
-}
-
-void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
+void TMC2209_SetTPWMTHRS (TMC2209_t *driver, float mm_sec, float steps_mm)
 {
-	if (htim->Instance == TIM2) {
-		if(oneStepMove_start){
-			oneStepMove_finish = TRUE;
-			oneStepMove_start = FALSE;
-		}
-
-		stepCounter ++;
-	}
+    driver->tpwmthrs.reg.tpwmthrs = tmc_calc_tstep(&driver->config, mm_sec, steps_mm);
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->tpwmthrs);
 }
 
+void TMC2209_SetTCOOLTHRS (TMC2209_t *driver, float mm_sec, float steps_mm) // -> pwm threshold
+{
+    driver->tcoolthrs.reg.tcoolthrs = tmc_calc_tstep(&driver->config, mm_sec, steps_mm);
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->tcoolthrs);
+}
 
+// 1 - 256 in steps of 2^value is valid for TMC2209
+bool TMC2209_MicrostepsIsValid (uint16_t usteps)
+{
+    return tmc_microsteps_validate(usteps);
+}
+
+void TMC2209_SetMicrosteps (TMC2209_t *driver, tmc2209_microsteps_t msteps)
+{
+    driver->chopconf.reg.mres = tmc_microsteps_to_mres(msteps);
+    driver->config.microsteps = (tmc2209_microsteps_t)(1 << (8 - driver->chopconf.reg.mres));
+// TODO: recalc and set hybrid threshold if enabled?
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->chopconf);
+}
+
+void TMC2209_SetConstantOffTimeChopper (TMC2209_t *driver, uint8_t constant_off_time, uint8_t blank_time, uint8_t fast_decay_time, int8_t sine_wave_offset, bool use_current_comparator)
+{
+    //calculate the value acc to the clock cycles
+    if (blank_time >= 54)
+        blank_time = 3;
+    else if (blank_time >= 36)
+        blank_time = 2;
+    else if (blank_time >= 24)
+        blank_time = 1;
+    else
+        blank_time = 0;
+
+    if (fast_decay_time > 15)
+        fast_decay_time = 15;
+
+    driver->chopconf.reg.tbl = blank_time;
+    driver->chopconf.reg.toff = constant_off_time < 2 ? 2 : (constant_off_time > 15 ? 15 : constant_off_time);
+    driver->chopconf.reg.hstrt = fast_decay_time & 0x7;
+    driver->chopconf.reg.hend = (sine_wave_offset < -3 ? -3 : (sine_wave_offset > 12 ? 12 : sine_wave_offset)) + 3;
+//!    driver->chopconf.reg.rndtf = !use_current_comparator;
+
+    TMC2209_WriteRegister(driver, (TMC2209_datagram_t *)&driver->chopconf);
+}
+
+bool TMC2209_WriteRegister (TMC2209_t *driver, TMC2209_datagram_t *reg)
+{
+    TMC_uart_write_datagram_t datagram;
+
+    datagram.msg.sync = 0x05;
+    datagram.msg.slave = driver->config.motor.address;
+    datagram.msg.addr.value = reg->addr.value;
+    datagram.msg.addr.write = 1;
+    datagram.msg.payload.value = reg->payload.value;
+
+    tmc_byteswap(datagram.msg.payload.data);
+
+    tmc_crc8(datagram.data, sizeof(TMC_uart_write_datagram_t));
+
+    tmc_uart_write(driver->config.motor, &datagram);
+
+// TODO: add check for ok'ed?
+
+    return true;
+}
+
+bool TMC2209_ReadRegister (TMC2209_t *driver, TMC2209_datagram_t *reg)
+{
+    bool ok = false;
+    TMC_uart_read_datagram_t datagram;
+    TMC_uart_write_datagram_t *res;
+
+    datagram.msg.sync = 0x05;
+    datagram.msg.slave = driver->config.motor.address;
+    datagram.msg.addr.value = reg->addr.value;
+    datagram.msg.addr.write = 0;
+    tmc_crc8(datagram.data, sizeof(TMC_uart_read_datagram_t));
+
+    res = tmc_uart_read(driver->config.motor, &datagram);
+
+    if(res->msg.slave == 0xFF && res->msg.addr.value == datagram.msg.addr.value) {
+        uint8_t crc = res->msg.crc;
+        tmc_crc8(res->data, sizeof(TMC_uart_write_datagram_t));
+        if((ok = crc == res->msg.crc)) {
+            reg->payload.value = res->msg.payload.value;
+            tmc_byteswap(reg->payload.data);
+        }
+    }
+
+    return ok;
+}
+
+// Returns pointer to shadow register or NULL if not found
+TMC2209_datagram_t *TMC2209_GetRegPtr (TMC2209_t *driver, tmc2209_regaddr_t reg)
+{
+    TMC2209_datagram_t *ptr = (TMC2209_datagram_t *)driver;
+
+    while(ptr && ptr->addr.reg != reg) {
+        ptr++;
+        if(ptr->addr.reg == TMC2209Reg_LAST_ADDR && ptr->addr.reg != reg)
+            ptr = NULL;
+    }
+
+    return ptr;
+}

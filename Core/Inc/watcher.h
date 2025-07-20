@@ -8,46 +8,30 @@
 #ifndef INC_WATCHER_H_
 #define INC_WATCHER_H_
 #include "stm32f1xx_hal.h"
+#include <stdlib.h>
+#include <stdbool.h>
 
 #define WATCHER_BUFFER 50
+#define TRUE 1
+#define FALSE 0
 
 typedef enum {
-	WATCHER_NORMAL =  0x00,
-	WATCHER_ERROR  = 0x01,
-} WATCHER_STAT;
+	WATCHER_ERR_NORM 			= 0,
+	WATCHER_ERR_DRV_INIT 		= 1,
+	WATCHER_ERR_DRV_FAULT 		= 2,
 
-typedef enum {
-	WATCHER_STAT_NORM = 0x00,
-	WATCHER_DRV_FAULT = 0x01,
-	WATCHER_ENC_FAULT = 0x02,
-	WATCHER_IMU_FAULT = 0x03,
-	WATCHER_CAN_FAULT = 0x04,
-} WATCHER_ERR_STAT;
+	WATCHER_ERR_ENC_DISCONNECT 	= 10,
+	WATCHER_ERR_ENC_INIT 		= 11,
+	WATCHER_ERR_ENC_LINE  		= 12,
+	WATCHER_ERR_ENC_CALIBFLT 	= 13,
 
-typedef enum {
-	WATCHER_DRV_NORM 		= 0x00,
-	WATCHER_DRV_OVERTEMP 	= 0x01,
-	WATCHER_DRV_SHORT2GND 	= 0x02,
-	WATCHER_DRV_LMOSSHORT 	= 0x03,
-	WATCHER_DRV_INITFAIL	= 0x04,
-} WATCHER_DRV_STAT;
+} WATCHER_ERR_CODE;
 
-typedef enum {
-	WATCHER_ENC_NORM 		= 0x00,
-	WATCHER_ENC_INITFAIL	= 0x01,
-	WATCHER_ENC_DISCONNECT 	= 0x02,
 
-} WATHER_ENC_STAT;
-
-typedef struct{
-	WATCHER_STAT stat;
-	WATCHER_ERR_STAT detail;
-} WATCHER_t;
-
-uint8_t getSysStatus();
-uint8_t getSysError();
-void emmitSysError(WATCHER_ERR_STAT);
-void resetSysError();
+void initWatcherStack();
+void pushError(WATCHER_ERR_CODE);
+void removeError(WATCHER_ERR_CODE);
+bool isErrorExist();
 void displaySysStat();
 
 #endif /* INC_WATCHER_H_ */

@@ -39,5 +39,6 @@
 "./Middlewares/Third_Party/FreeRTOS/Source/timers.o"
 "./Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.o"
 "./Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.o"
-"./MotorDriver/Src/TMC2209.o"
-"./MotorDriver/Src/TMC2209_HAL.o"
+"./MotorDriver/Src/common.o"
+"./MotorDriver/Src/motion.o"
+"./MotorDriver/Src/tmc2209.o"
